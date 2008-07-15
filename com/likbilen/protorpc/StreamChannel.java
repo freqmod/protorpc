@@ -66,7 +66,7 @@ public class StreamChannel implements RpcChannel{
 				out.flush();
 				streamlock.unlock();
 				unlocked=false;
-				//implement threaded asyncronous response
+				//implement threaded asyncronous response-
 				if(Constants.fromCode(in.read())==Constants.TYPE_RESPONSE){
 					int msglen =in.readUnsignedLittleEndianShort();
 					tmpb=new byte[msglen];
