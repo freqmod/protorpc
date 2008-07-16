@@ -6,6 +6,7 @@ public enum Constants {
 	TYPE_BIGMESSAGE,
 	TYPE_RESPONSE,
 	TYPE_BIGRESPONSE,
+	TYPE_RESPONSE_CANCEL,
 	TYPE_DISCONNECT,
 	TYPE_UNKNOWN;
 	public static int getCode(Constants c){
@@ -20,8 +21,10 @@ public enum Constants {
 			return 4;
 		case TYPE_BIGRESPONSE:
 			return 5;
-		case TYPE_DISCONNECT:
+		case TYPE_RESPONSE_CANCEL:
 			return 6;
+		case TYPE_DISCONNECT:
+			return 7;
 		default:
 			return 255;
 		}
@@ -39,6 +42,8 @@ public enum Constants {
 		case 5:
 			return TYPE_BIGRESPONSE;
 		case 6:
+			return TYPE_RESPONSE_CANCEL;
+		case 7:
 			return TYPE_DISCONNECT;
 		default:
 			return TYPE_UNKNOWN;

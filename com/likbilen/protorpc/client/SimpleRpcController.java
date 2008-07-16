@@ -1,16 +1,16 @@
-package com.likbilen.protorpc;
+package com.likbilen.protorpc.client;
 
 import java.util.HashSet;
 
 import com.google.protobuf.RpcCallback;
 import com.google.protobuf.RpcController;
 
-public class StreamRpcController implements RpcController {
+public class SimpleRpcController implements RpcController {
 	private String reason;
 	private boolean hasFailed;
 	private boolean canceled;
 	HashSet<RpcCallback<Object>> cancelListeners=new HashSet<RpcCallback<Object>>();
-	public StreamRpcController(){
+	public SimpleRpcController(){
 		reset();
 	}
 	@Override

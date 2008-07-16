@@ -26,9 +26,11 @@ class ThreadInvoker extends Thread{
 				e.printStackTrace();
 			}
 			exlock.lock();
-			ex=e;
-		}finally{
-			exlock.unlock();
+			try{
+				ex=e;
+			}finally{
+				exlock.unlock();
+			}
 		}
 	}
 	public Exception gotException(){

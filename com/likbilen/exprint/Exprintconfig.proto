@@ -1,0 +1,20 @@
+package exprint;
+
+option java_package = "com.likbilen.exprint";
+option java_outer_classname = "Exprintdata";
+
+message Exprintconfig {
+  message Exprint {
+    required string subjectcode = 1;
+    optional string paralell = 2;
+    optional bool solutions =3 [default=false];
+  };
+  repeated Exprint exprints =1;
+  required string printer=2;  
+};
+message ExprintserverSetConfigResponse {
+  optional string responsecode=1;
+}
+service Exprintserver {
+  rpc set_config (Exprintconfig) returns (ExprintserverSetConfigResponse);
+};
