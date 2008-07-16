@@ -31,8 +31,7 @@ public class SocketServer extends Thread implements RpcCallback<Boolean>{
 				ss.start();
 			}
 		}catch(IOException e){
-			
-			e.printStackTrace();
+			//don't handle, most probably shut down
 		}finally{
 			running=false;
 		}
@@ -54,7 +53,11 @@ public class SocketServer extends Thread implements RpcCallback<Boolean>{
 			for(StreamServer s:streamServers){
 				s.shutdown(closeStreams);
 			}
-			
+			try {
+				ssc.close();
+			} catch (IOException e) {
+				//donm't handle
+			}
 		}
 	}
 	@Override

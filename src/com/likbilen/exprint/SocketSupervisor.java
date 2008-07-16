@@ -16,7 +16,7 @@ public class SocketSupervisor {
 	public static void main(String[] args) {
 		boolean server=true;
 		boolean client=true;
-		int port=12361;
+		int port=12377;
 		try {
 			
 			SocketChannel.registerProtocolHandler();
@@ -26,13 +26,13 @@ public class SocketSupervisor {
 			srv.start();
 			}
 			if(client)
-				setConfiguration("pbrpc://localhost:"+port);
+				setConfiguration("pbrpc://localhost:"+port,client&&server);
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
 	}
 
-	public static void setConfiguration(String url) {
+	public static void setConfiguration(String url,boolean forceClose) {
 		TwoWayStream chan=null;
 		try {
 			URL endpoint=new URL(url);
@@ -53,6 +53,7 @@ public class SocketSupervisor {
 		expb = Exprintdata.Exprintconfig.Exprint.newBuilder();
 		expb.setParalell("HappyHour");
 		expb.setSubjectcode("TFY4125");
+		expb.setSolutions(true);
 		reqbld.addExprints(expb);
 		expb = Exprintdata.Exprintconfig.Exprint.newBuilder();
 		expb.setSubjectcode("TDT4100");
@@ -66,6 +67,6 @@ public class SocketSupervisor {
 		} catch (TimeoutException e) {
 			e.printStackTrace();
 		}
-		chan.shutdown(false);
+		chan.shutdown(forceClose);
 	}
 }

@@ -78,10 +78,9 @@ public class TwoWayStream extends Thread implements SessionManager,RpcChannel{
 					if(Constants.fromCode(code) == Constants.TYPE_DISCONNECT ||code == -1){//disconnected by stream
 						connected=false;
 						break;
-					}				
+					}	
 					try {
 						if (Constants.fromCode(code) == Constants.TYPE_MESSAGE&&service!=null) {
-	
 							streamlock.lock();
 							try{
 								msgid = in.readUnsignedLittleEndianShort();
@@ -116,6 +115,8 @@ public class TwoWayStream extends Thread implements SessionManager,RpcChannel{
 							}finally{
 								streamlock.unlock();
 							}
+						}else{//empty buffer
+							in.skip(in.available());
 						}
 					} catch (TimeoutException e) {
 						// TODO Auto-generated catch block
@@ -224,6 +225,7 @@ public class TwoWayStream extends Thread implements SessionManager,RpcChannel{
 		if(connected){
 			try{
 				out.write(Constants.getCode(Constants.TYPE_DISCONNECT));
+				out.flush();
 			}catch(IOException e){
 				//don't handle
 			}
