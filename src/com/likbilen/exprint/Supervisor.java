@@ -10,8 +10,6 @@ import java.util.concurrent.TimeoutException;
 import com.likbilen.protorpc.client.ResponseWaiter;
 import com.likbilen.protorpc.client.SimpleRpcController;
 import com.likbilen.protorpc.stream.TwoWayStream;
-import com.likbilen.protorpc.stream.standalone.StreamChannel;
-import com.likbilen.protorpc.stream.standalone.StreamServer;
 
 public class Supervisor {
 	public static void main(String[] args) {

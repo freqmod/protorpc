@@ -11,7 +11,6 @@ import com.likbilen.protorpc.client.SimpleRpcController;
 import com.likbilen.protorpc.socket.SocketChannel;
 import com.likbilen.protorpc.socket.SocketServer;
 import com.likbilen.protorpc.stream.TwoWayStream;
-import com.likbilen.protorpc.stream.standalone.StreamChannel;
 
 public class SocketSupervisor {
 	public static void main(String[] args) {
