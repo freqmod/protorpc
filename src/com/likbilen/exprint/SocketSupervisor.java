@@ -14,13 +14,19 @@ import com.likbilen.protorpc.stream.TwoWayStream;
 
 public class SocketSupervisor {
 	public static void main(String[] args) {
-		int port=12360;
+		boolean server=true;
+		boolean client=true;
+		int port=12361;
 		try {
+			
 			SocketChannel.registerProtocolHandler();
+			if(server){
 			SocketServer srv = new SocketServer(new Exprintservice());
 			srv.getServerSocket().bind(new InetSocketAddress(port));
 			srv.start();
-			setConfiguration("pbrpc://localhost:"+port);
+			}
+			if(client)
+				setConfiguration("pbrpc://localhost:"+port);
 		} catch (IOException e) {
 			e.printStackTrace();
 		}

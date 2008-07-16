@@ -36,10 +36,15 @@ public class TwoWayStream extends Thread implements SessionManager,RpcChannel{
 	protected int callnum=0;
 	protected HashMap<Integer,Pair<RpcCallback<Message>,Message>> currentCalls=new HashMap<Integer, Pair<RpcCallback<Message>,Message>>();
 	protected Lock streamlock=new ReentrantLock();
+	protected RpcCallback<Boolean> shutdownCallback;
 	public TwoWayStream(InputStream in,OutputStream out){
 		streamChannelConstructor(in, out,null, true);
 	}
 	public TwoWayStream(InputStream in,OutputStream out,Service srv){
+		streamChannelConstructor(in, out, srv,true);
+	}
+	public TwoWayStream(InputStream in,OutputStream out,Service srv,RpcCallback<Boolean> shutdownCallback){
+		this.shutdownCallback=shutdownCallback;
 		streamChannelConstructor(in, out, srv,true);
 	}
 
@@ -65,61 +70,66 @@ public class TwoWayStream extends Thread implements SessionManager,RpcChannel{
 		byte tmpb[];
 		int code = 0, msgid, msglen;
 		Pair<RpcCallback<Message>, Message> msg;
-
-		try {
-			
-			while (connected) {
-				code=in.read();
-				if(Constants.fromCode(code) == Constants.TYPE_DISCONNECT ||code == -1){//disconnected by stream
-					connected=false;
-					break;
-				}				
-				try {
-					if (Constants.fromCode(code) == Constants.TYPE_MESSAGE&&service!=null) {
-
-						streamlock.lock();
-						try{
-							msgid = in.readUnsignedLittleEndianShort();
-							method = service.getDescriptorForType().getMethods()
-									.get(in.readUnsignedLittleEndianShort());
-							tmpb = new byte[in.readUnsignedLittleEndianShort()];
-							in.readFully(tmpb, timeout);
-							request = service.getRequestPrototype(method)
-									.newBuilderForType().mergeFrom(tmpb).build();
-							controller = new SessionRpcControllerImpl(this);
-							controller.notifyOnCancel(new StreamServerCallback<Object>(
-											this, msgid));
-						}finally{
-							streamlock.unlock();
-						}
-						service.callMethod(method, controller, request,
-										new StreamServerCallback<Message>(this,
-												msgid));
-					}else if (Constants.fromCode(code) == Constants.TYPE_RESPONSE) {
-						streamlock.lock();
-						try{
-							msgid = in.readUnsignedLittleEndianShort();
-							msglen = in.readUnsignedLittleEndianShort();
-							tmpb = new byte[msglen];
-							in.readFully(tmpb, timeout);
-							if (currentCalls.containsKey(new Integer(msgid))) {
-								msg = currentCalls.get(new Integer(msgid));
-								Message response = msg.last.newBuilderForType().mergeFrom(tmpb).build(); 
-								msg.first.run(response);
-								currentCalls.remove(new Integer(msgid));
+		try{
+			try {
+				
+				while (connected) {
+					code=in.read();
+					if(Constants.fromCode(code) == Constants.TYPE_DISCONNECT ||code == -1){//disconnected by stream
+						connected=false;
+						break;
+					}				
+					try {
+						if (Constants.fromCode(code) == Constants.TYPE_MESSAGE&&service!=null) {
+	
+							streamlock.lock();
+							try{
+								msgid = in.readUnsignedLittleEndianShort();
+								method = service.getDescriptorForType().getMethods()
+										.get(in.readUnsignedLittleEndianShort());
+								tmpb = new byte[in.readUnsignedLittleEndianShort()];
+								in.readFully(tmpb, timeout);
+								request = service.getRequestPrototype(method)
+										.newBuilderForType().mergeFrom(tmpb).build();
+								controller = new SessionRpcControllerImpl(this);
+								controller.notifyOnCancel(new StreamServerCallback<Object>(
+												this, msgid));
+							}finally{
+								streamlock.unlock();
 							}
-						}finally{
-							streamlock.unlock();
+							service.callMethod(method, controller, request,
+											new StreamServerCallback<Message>(this,
+													msgid));
+						}else if (Constants.fromCode(code) == Constants.TYPE_RESPONSE) {
+							streamlock.lock();
+							try{
+								msgid = in.readUnsignedLittleEndianShort();
+								msglen = in.readUnsignedLittleEndianShort();
+								tmpb = new byte[msglen];
+								in.readFully(tmpb, timeout);
+								if (currentCalls.containsKey(new Integer(msgid))) {
+									msg = currentCalls.get(new Integer(msgid));
+									Message response = msg.last.newBuilderForType().mergeFrom(tmpb).build(); 
+									msg.first.run(response);
+									currentCalls.remove(new Integer(msgid));
+								}
+							}finally{
+								streamlock.unlock();
+							}
 						}
+					} catch (TimeoutException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
 					}
-				} catch (TimeoutException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
 				}
-			}
-		} catch (IOException e) {
-			connected=false;//Most likely a disconnect
-		} 
+			} catch (IOException e) {
+				
+			} 
+		}finally{
+			connected=false;
+			if(shutdownCallback!=null)
+				shutdownCallback.run(false);
+		}
 	}
 
 	public void run(Integer id, Object param) {
@@ -231,6 +241,8 @@ public class TwoWayStream extends Thread implements SessionManager,RpcChannel{
 					e.printStackTrace();
 				}
 			}
+			if(shutdownCallback!=null)
+				shutdownCallback.run(false);
 		}
 	}
 	public boolean isRunning() {

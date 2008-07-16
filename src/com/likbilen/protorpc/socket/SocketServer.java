@@ -5,11 +5,12 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.HashSet;
 
+import com.google.protobuf.RpcCallback;
 import com.google.protobuf.Service;
 import com.likbilen.protorpc.stream.TwoWayStream;
 import com.likbilen.protorpc.stream.standalone.StreamServer;
 
-public class SocketServer extends Thread {
+public class SocketServer extends Thread implements RpcCallback<Boolean>{
 	protected ServerSocket ssc;
 	protected boolean running;
 	protected Service service;
@@ -26,12 +27,14 @@ public class SocketServer extends Thread {
 		try{
 			while(running){
 				client=ssc.accept();
-				TwoWayStream ss=new TwoWayStream(client.getInputStream(),client.getOutputStream(),service);
+				TwoWayStream ss=new TwoWayStream(client.getInputStream(),client.getOutputStream(),service,this);
 				ss.start();
 			}
 		}catch(IOException e){
-			running=false;
+			
 			e.printStackTrace();
+		}finally{
+			running=false;
 		}
 	}
 	public void start(){
@@ -53,5 +56,9 @@ public class SocketServer extends Thread {
 			}
 			
 		}
+	}
+	@Override
+	public void run(Boolean parameter) {
+		shutdown(parameter);
 	}
 }
