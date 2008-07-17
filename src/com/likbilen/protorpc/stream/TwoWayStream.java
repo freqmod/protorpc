@@ -21,24 +21,46 @@ import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
-import sun.misc.Signal;
-
 import com.google.protobuf.Message;
 import com.google.protobuf.RpcCallback;
 import com.google.protobuf.RpcChannel;
 import com.google.protobuf.RpcController;
 import com.google.protobuf.Service;
 import com.google.protobuf.Descriptors.MethodDescriptor;
+import com.likbilen.exprint.Exprintservice;
 import com.likbilen.protorpc.client.BreakableChannel;
 import com.likbilen.protorpc.client.ChannelBrokenListener;
 import com.likbilen.protorpc.client.SimpleRpcController;
 import com.likbilen.protorpc.proto.Constants;
 import com.likbilen.protorpc.stream.session.SessionManager;
-import com.likbilen.protorpc.stream.session.TwoWayRpcController;
 import com.likbilen.protorpc.tools.DataInputStream;
 import com.likbilen.protorpc.tools.DataOutputStream;
 import com.likbilen.protorpc.tools.ThreadTools;
 import com.likbilen.util.Pair;
+/**
+ * The main class. This class implements an rpc channel and a server, that communicates over IO streams.
+ * Server usage example:
+ * 
+ * TwoWayStream srv=new TwoWayStream(in,out,service);
+ * where in and out are valid opened streams.
+ * 
+ * To shutdown server:
+ * chan.shutdown(false);
+ * 
+ * 
+ * Client usage example:
+ * 
+ * TwoWayStream chan=new TwoWayStream(in,out);
+ *
+ * // call methods by the RpcChannel interface
+ *
+ * chan.shutdown(false);
+ *
+ * The channel may be used as a client and server at the same time (even when it is initialized with a service)
+ *
+ * @author Frederik
+ *
+ */
 
 public class TwoWayStream extends Thread implements SessionManager,RpcChannel,BreakableChannel{
 	/* protected OutputStream origStream; */
@@ -58,20 +80,52 @@ public class TwoWayStream extends Thread implements SessionManager,RpcChannel,Br
 	protected Condition initcond = streamlock.newCondition();
 	protected RpcCallback<Boolean> shutdownCallback;
 	protected HashSet<ChannelBrokenListener> channelBrokenListeners= new HashSet<ChannelBrokenListener>();
+	/**
+	 * Call TwoWayStream(in,out,null,true)
+	 * @see  #TwoWayStream(InputStream,OutputStream,Service,boolean)
+	 * @param in
+	 * @param out
+	 */
 	public TwoWayStream(InputStream in,OutputStream out){
 		streamChannelConstructor(in, out,null, true);
 	}
+	/**
+	 * Call TwoWayStream(in,out,srv,true)
+	 * @see  #TwoWayStream(InputStream,OutputStream,Service,boolean)
+	 * @param in
+	 * @param out
+	 */
 	public TwoWayStream(InputStream in,OutputStream out,Service srv){
 		streamChannelConstructor(in, out, srv,true);
 	}
+	/**
+	 * Call TwoWayStream(in,out,srv,true)
+	 * and set a callback that is ran when the stream shuts down 
+	 * @see  #TwoWayStream(InputStream,OutputStream,Service,boolean)
+	 * @param in
+	 * @param out
+	 */
 	public TwoWayStream(InputStream in,OutputStream out,Service srv,RpcCallback<Boolean> shutdownCallback){
 		this.shutdownCallback=shutdownCallback;
 		streamChannelConstructor(in, out, srv,true);
 	}
-
+	/**
+	 * Call TwoWayStream(in,out,null,autostart)
+	 * @see  #TwoWayStream(InputStream,OutputStream,Service,boolean)
+	 * @param in
+	 * @param out
+	 */
 	public TwoWayStream(InputStream in,OutputStream out,boolean autostart){
 		streamChannelConstructor(in, out, null, autostart);
 	}
+	/**
+	 * Create a TwoStreamChannel
+	 * @param in - the stream to listen on, should be open
+	 * @param out - the stream to write to, should be open
+	 * @param srv - the server to wrap, or null if the channel should only be a client 
+	 * @param autostart - call start()
+	 * @see #start()
+	 */
 	public TwoWayStream(InputStream in,OutputStream out,Service srv,boolean autostart){
 		streamChannelConstructor(in, out, srv, autostart);
 	}
@@ -83,7 +137,10 @@ public class TwoWayStream extends Thread implements SessionManager,RpcChannel,Br
 		if(autostart)
 			start();
 	}
-
+	/**
+	 * Private: Called by thread, may dissappear at any moment
+	 */
+	@Override
 	public void run() {
 		MethodDescriptor method;
 		Message request;
@@ -184,7 +241,9 @@ public class TwoWayStream extends Thread implements SessionManager,RpcChannel,Br
 			fireChannelBroken();
 		}
 	}
-
+	/**
+	 * Private: Called to signal that a response is recieved, may dissappear at any moment
+	 */
 	public void run(Integer id, Object param) {
 		if(service==null)
 			return;
@@ -212,6 +271,9 @@ public class TwoWayStream extends Thread implements SessionManager,RpcChannel,Br
 
 
 	/*-------------Rpc channel methods ---------*/
+	/**
+	 * Specified by RpcChannel
+	 */
 	@Override
 	public void callMethod(MethodDescriptor method, RpcController controller,
 			Message request, Message responsePrototype,
@@ -232,10 +294,7 @@ public class TwoWayStream extends Thread implements SessionManager,RpcChannel,Br
 			callMethodThreaded(method, controller, request, responsePrototype, done);
 		}
 	}
-	/**
-	 * From RpcChannel
-	 */
-	public void callMethodThreaded(MethodDescriptor method,
+	protected void callMethodThreaded(MethodDescriptor method,
 			RpcController controller, Message request,
 			Message responsePrototype, RpcCallback<Message> done) {
 		streamlock.lock();
@@ -268,27 +327,22 @@ public class TwoWayStream extends Thread implements SessionManager,RpcChannel,Br
 		}
 
 	}
+	/*Misc methods*/
 	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	/*misc methods*/
-	
+	/**
+	 * Start the stream, must be called before calling callMethod
+	 * @see #callMethod(MethodDescriptor, RpcController, Message, Message, RpcCallback)
+	 */
 	public void start(){
 		if(!connected){
 			connected=true;
 			super.start();
 		}
 	}
+	/**
+	 * Shut down the server
+	 * @param closeStreams - close the iostreams?
+	 */
 	public void shutdown(boolean closeStreams){
 		if(connected){
 			try{
@@ -316,44 +370,85 @@ public class TwoWayStream extends Thread implements SessionManager,RpcChannel,Br
 			fireChannelBroken();
 		}
 	}
+	/**
+	 * Is the server running?
+	 * @return true if the server is running, else false
+	 */
 	public boolean isRunning() {
 		return connected;
 	}
+	/**
+	 * The timeout (in milliseconds) when reading buffers from the stream
+	 * @return timeout
+	 */
 	public int getTimeout() {
 		return timeout;
 	}
+	/**
+	 * The timeout (in milliseconds) when reading buffers from the stream
+	 * @param timeout
+	 */
 
-	public void setTimeout(int default_timeout) {
-		this.timeout = default_timeout;
+	public void setTimeout(int timeout) {
+		this.timeout = timeout;
 	}
-
+	/**
+	 * {@inheritDoc}
+	 */
 	@Override
 	public Object getSessionId() {
 		return session;
 	}
-
+	/**
+	 * {@inheritDoc}
+	 */
 	@Override
 	public void setSessionId(Object id) {
 		this.session=id;
 	}
+	/**
+	 * Get the service this channel wraps
+	 * @return - the service this channel wraps, or null if none
+	 */
 	public Service getService() {
 		return service;
 	}
+	/**
+	 * Get the service this channel wraps
+	 * @param service - the service this channel should wrap
+	 * @throws IllegalStateException - if the service has been set alleready
+	 */
 	public void setService(Service service) throws IllegalStateException{
 		if(this.service!=null)
 			throw new IllegalStateException("Service allready set to:"+service);
 		this.service = service;
 	}
+	/**
+	 * Should the stream spawn callMethod's in separate threads, default no.
+	 * @see #callMethod(MethodDescriptor, RpcController, Message, Message, RpcCallback)
+
+	 */
 	public void setSpawnCallers(boolean spawnCallers) {
 		this.spawnCallers = spawnCallers;
 	}
+	/**
+	 * Should the stream spawn callMethod's in separate threads, default no. 
+	 * @see #callMethod(MethodDescriptor, RpcController, Message, Message, RpcCallback)
+
+	 */
 	public boolean doesSpawnCallers() {
 		return spawnCallers;
 	}
+	/**
+	 * {@inheritDoc}
+	 */
 	@Override
 	public void addChannelBrokenListener(ChannelBrokenListener l) {
 		channelBrokenListeners.add(l);
 	}
+	/**
+	 * {@inheritDoc}
+	 */
 	@Override
 	public void removeChannelBrokenListener(ChannelBrokenListener l) {
 		channelBrokenListeners.remove(l);

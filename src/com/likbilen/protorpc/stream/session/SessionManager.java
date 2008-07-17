@@ -8,8 +8,19 @@ package com.likbilen.protorpc.stream.session;
 
 *   http://www.apache.org/licenses/LICENSE-2.0
 */
-
+/**
+ * Session manager, implemented by TwoWayStream to make a server remember session information.
+ * The session id is the same when the service is called from the same connection
+ */
 public interface SessionManager {
+	/**
+	 * Set session id
+	 * @param id - session id
+	 */
 	public void setSessionId(Object id);
+	/**
+	 * Recieve session id set by setSessionId
+	 * @return - session id
+	 */
 	public Object getSessionId();
 }

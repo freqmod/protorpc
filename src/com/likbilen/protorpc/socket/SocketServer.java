@@ -17,16 +17,37 @@ import java.util.HashSet;
 import com.google.protobuf.RpcCallback;
 import com.google.protobuf.Service;
 import com.likbilen.protorpc.stream.TwoWayStream;
-
+/**
+ * A server that accepts connections from socket channel
+ * Usage example:
+ * SocketServer srv = new SocketServer(service);
+ * //Make the server shut down when a client disconnects, which makes the program close by itself
+ * srv.setShutDownOnDisconnect(true);
+ * //Bind the serversocket to a port
+ * srv.getServerSocket().bind(new InetSocketAddress(port));
+ * //Start the server
+ * srv.start();
+ * @author Frederik
+ *
+ */
 public class SocketServer extends Thread implements RpcCallback<Boolean>{
 	protected ServerSocket ssc;
 	protected boolean running;
 	protected Service service;
 	protected HashSet<TwoWayStream> streamServers=new HashSet<TwoWayStream>();
+	protected boolean shutDownOnDisconnect=false;
+	/**
+	 * Create a socket server, the ServerSocket available from getServerSocket() should be called before it is started.
+	 * @param server
+	 * @throws IOException
+	 */
 	public SocketServer(Service server) throws IOException{
 		this.service=server;
 		ssc=new ServerSocket();
 	}
+	/**
+	 * Get the server socket that this SocketServer listens to
+	 */
 	public ServerSocket getServerSocket(){
 		return ssc;
 	}
@@ -44,12 +65,19 @@ public class SocketServer extends Thread implements RpcCallback<Boolean>{
 			running=false;
 		}
 	}
+	/**
+	 * Start this server socket. The server socket should be set up before calling this method.
+	 */
 	public void start(){
 		if(!running){
 			running=true;
 			super.start();
 		}
 	}
+	/**
+	 * Shut down this server socket
+	 * @param closeStreams - should the socket close the streams in this socket, leave to false if in doubt
+	 */
 	public void shutdown(boolean closeStreams){
 		if(running){
 			running=false;
@@ -70,6 +98,19 @@ public class SocketServer extends Thread implements RpcCallback<Boolean>{
 	}
 	@Override
 	public void run(Boolean parameter) {
-		shutdown(parameter);
+		if(shutDownOnDisconnect)
+			shutdown(parameter);
+	}
+	/**
+	 * Should this socket shut down if a client disconnects from it?
+	 */
+	public boolean doShutDownOnDisconnect() {
+		return shutDownOnDisconnect;
+	}
+	/**
+	 * Should this socket shut down if a client disconnects from it?
+	 */
+	public void setShutDownOnDisconnect(boolean shutDownOnDisconnect) {
+		this.shutDownOnDisconnect = shutDownOnDisconnect;
 	}
 }

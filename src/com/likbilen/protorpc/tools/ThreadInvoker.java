@@ -26,7 +26,11 @@ package com.likbilen.protorpc.tools;
 import java.lang.reflect.Method;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
-
+/**
+ * Class that invokes methods in separate a thread
+ * @author freqmod
+ *
+ */
 class ThreadInvoker extends Thread{
 	private Method m;
 	private Object instance;

@@ -26,6 +26,12 @@ package com.likbilen.protorpc.tools;
 import java.lang.reflect.Method;
 
 public class ThreadTools{
+	/**
+	 * Invoke the method in a separate thread
+	 * @param m - the method to invoke
+	 * @param instance - the instance to invoke the method on, or null if the method is static
+	 * @param arguments - the arguments to pass to the method
+	 */
 	public static void invokeInSeparateThread(Method m,Object instance,Object[] arguments){
 		ThreadInvoker i= new ThreadInvoker(m,instance,arguments,false);
 		i.start();

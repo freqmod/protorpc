@@ -13,7 +13,11 @@ import java.io.IOException;
 import java.net.URL;
 import java.net.URLConnection;
 import java.net.URLStreamHandler;
-
+/**
+ * Dummy url handler that does nothing but makes pbrpc-urls possible when registred
+ * @author Frederik
+ *
+ */
 public class Handler extends URLStreamHandler{
 	public Handler(){
 	}

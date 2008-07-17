@@ -28,21 +28,28 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
-import java.util.concurrent.TimeoutException;
 
 import com.likbilen.protorpc.client.ResponseWaiter;
 import com.likbilen.protorpc.client.SimpleRpcController;
 import com.likbilen.protorpc.stream.TwoWayStream;
+/**
+ * The Supervsor is an example of a client and a server that communicates only with streams.
+ * @author Frederik 
+ *
+ */
 
 public class Supervisor {
 	public static void main(String[] args) {
 		try{
+			//Set up streams to make the server and client communicate with eachother
 			PipedInputStream cin=new PipedInputStream();
 			PipedOutputStream cout= new PipedOutputStream();
 			PipedInputStream sin= new PipedInputStream(cout);
 			PipedOutputStream sout= new PipedOutputStream(cin);
+			//Create a "server" that wraps a service
 			TwoWayStream srv=new TwoWayStream(sin,sout,new Exprintservice("",false));
 			setConfiguration(cin,cout);
+			//Close the streams
 			sin.close();
 			cin.close();
 			cout.close();
@@ -53,10 +60,15 @@ public class Supervisor {
 		}
 	}
 	 public static  void setConfiguration(InputStream in,OutputStream out) {
+		 //Create a "client" connection
 		 TwoWayStream chan=new TwoWayStream(in,out);
+		 //Create a rpc controller to send with the rpc method
 		 SimpleRpcController cont=new SimpleRpcController();
+		 //Create a service that wraps the client channel
 		 Exprintdata.Exprintserver service = Exprintdata.Exprintserver.newStub(chan);
+		 //Create a responsewaiter that can block while waiting a response from the server
 		 ResponseWaiter<Exprintdata.ExprintserverSetConfigResponse> waiter = new ResponseWaiter<Exprintdata.ExprintserverSetConfigResponse>(chan);
+		 //Create and build the message that we send to the method, see the proto buffer documentation for more information
 		 Exprintdata.Exprintconfig.Builder reqbld=Exprintdata.Exprintconfig.newBuilder();
 		 reqbld.setPrinter("Morrohjørnet");
 		 Exprintdata.Exprintconfig.Exprint.Builder expb;
@@ -67,16 +79,20 @@ public class Supervisor {
 		 expb=Exprintdata.Exprintconfig.Exprint.newBuilder();
 		 expb.setSubjectcode("TDT4100");
 		 reqbld.addExprints(expb);
+		 //Run the RPC method
 		 service.setConfig(cont, reqbld.build(),waiter);
 		 try {
+			//Wait for response, if the response is  null, the method is canceled or has failed and the rpc controller will report what happened.
 			Exprintdata.ExprintserverSetConfigResponse resp =waiter.await();
+			//Clean up the waiter, free a pointer to the RpcChannel so it may be garbage collected.
+			//Remember to reset the waiter if you want to use it again.
 			waiter.cleanup();
+			//Print out the response code from the response
 			System.out.println(resp.getResponsecode());
 		} catch (InterruptedException e) {
 			e.printStackTrace();
-		} catch (TimeoutException e) {
-			e.printStackTrace();
 		}
+		//Shut down the connection
 		chan.shutdown(false);
 	}
 }

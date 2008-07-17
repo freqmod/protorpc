@@ -25,6 +25,9 @@ import java.io.OutputStream;
 * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
+/**
+ * Data output stream that support little endian operations
+ */
 
 public class DataOutputStream extends java.io.DataOutputStream{
 	public DataOutputStream(OutputStream out) {

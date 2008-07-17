@@ -29,6 +29,12 @@ import com.likbilen.exprint.Exprintdata.Exprintconfig;
 import com.likbilen.protorpc.client.SimpleRpcController;
 import com.likbilen.protorpc.stream.session.TwoWayRpcChannelController;
 
+/**
+ * Exprintservice is a service that responses to requests.
+ * It can make calls back to the server if twoway is enabled.
+ * @author Frederik
+ *
+ */
 public class Exprintservice extends Exprintdata.Exprintserver implements RpcCallback<Exprintdata.ExprintserverSetConfigResponse>{
 	String id;
 	boolean twoway;
@@ -39,23 +45,28 @@ public class Exprintservice extends Exprintdata.Exprintserver implements RpcCall
 	@Override
 	public void setConfig(RpcController controller, Exprintconfig request,
 			RpcCallback<Exprintdata.ExprintserverSetConfigResponse> done) {
+		//Handle the request and make a response (se protcol buffers for more info)
 		String ret =id+":"+request.getPrinter();
 		for(Exprintdata.Exprintconfig.Exprint exp:request.getExprintsList()){
 			ret+="|"+exp.getSubjectcode()+";"+exp.getParalell()+";"+(exp.getSolutions()?"jippi":"buu");
 		}
 		Exprintdata.ExprintserverSetConfigResponse.Builder resp=  Exprintdata.ExprintserverSetConfigResponse.newBuilder();
 		resp.setResponsecode(ret);
+		//Send the response
 		done.run(resp.build());
 		if(twoway)
-			callBack(controller);
+			callBack(controller);//make a call back to the server if configured to do it
 	}
 	private void callBack(RpcController controller){
+		//No way to call back witout a TwoWayRpcChannelController to get the RpcChannel back from
 		if(!(controller instanceof TwoWayRpcChannelController))
-			return;
+			return; 
+		//Get a TwoWayRpcControler from the controller 
 		TwoWayRpcChannelController twc=(TwoWayRpcChannelController)controller;
+		//Make a response to send back
 		SimpleRpcController cont = new SimpleRpcController();
 		Exprintdata.Exprintserver service = Exprintdata.Exprintserver
-				.newStub(twc.getRpcChannel());
+				.newStub(twc.getRpcChannel());//Get the channel back from the TwoWayRpcController
 		Exprintdata.Exprintconfig.Builder reqbld = Exprintdata.Exprintconfig
 				.newBuilder();
 		reqbld.setPrinter("Masmasmas");
@@ -65,9 +76,11 @@ public class Exprintservice extends Exprintdata.Exprintserver implements RpcCall
 		expb.setSubjectcode("TMA4140");
 		expb.setSolutions(true);
 		reqbld.addExprints(expb);
+		//Send a message back
 		service.setConfig(cont, reqbld.build(), this);
 	}
 	public void run(Exprintdata.ExprintserverSetConfigResponse r){
+		//Handle the response from the message sent back to the server
 		System.out.println("Got response:"+r.getResponsecode());
 	}
 	public String toString(){

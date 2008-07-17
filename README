@@ -1,0 +1,4 @@
+This is an implementation of RpcChannel and a server that it can communicate
+with for google protocol buffers.
+To learn how to use it look at com.likbilen.exprint.*Supervisor
+

@@ -14,6 +14,11 @@ import java.util.HashSet;
 import com.google.protobuf.RpcCallback;
 import com.google.protobuf.RpcController;
 
+/**
+ * Simple RPC controller that remembers all the things it is told. 
+ * @author Frederik
+ *
+ */
 public class SimpleRpcController implements RpcController {
 	private String reason;
 	private boolean hasFailed;

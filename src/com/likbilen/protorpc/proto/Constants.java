@@ -22,7 +22,10 @@ package com.likbilen.protorpc.proto;
 * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
-
+/**
+ * All the constants from the protocol, and ways to convert to and from bytecodes.
+ * @author Frederik
+ */
 public enum Constants {
 	TYPE_INIT,
 	TYPE_REQUEST,
