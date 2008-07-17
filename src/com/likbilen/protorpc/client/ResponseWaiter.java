@@ -16,15 +16,18 @@ import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 
 import com.google.protobuf.RpcCallback;
+import com.google.protobuf.RpcChannel;
 
-public class ResponseWaiter<E> implements RpcCallback<E>{
+public class ResponseWaiter<E> implements RpcCallback<E>,ChannelBrokenListener{
 	private boolean responded;
 	//RpcCallback<E> cb;
 	private ReentrantLock wl=new ReentrantLock();
 	private Condition wc=wl.newCondition();
 	private ReentrantLock al=new ReentrantLock();
 	private E cbr;
-	public ResponseWaiter(){
+	private BreakableChannel bc;
+	public ResponseWaiter(RpcChannel c){
+		listen(c);
 	}
 	public E await()throws InterruptedException,TimeoutException{
 		return await(0, null);
@@ -54,26 +57,49 @@ public class ResponseWaiter<E> implements RpcCallback<E>{
 	}
 	@Override
 	public void run(E param) {
-		// TODO Auto-generated method stub
 		wl.lock();
 		try {
 			cbr=param;
 			responded=true;
-			wc.signal();
+			wc.signalAll();
 		}finally{
 			wl.unlock();
 		}
 	}
-	public void reset(){
+	public void reset(RpcChannel newchan){
 		if(al.tryLock()){
 			try{
 				cbr=null;
 				responded=false;
+				cleanup();
+				listen(newchan);
 			}finally{
 				al.unlock();
 			}
 		}else{
 			throw new RejectedExecutionException("The response is allready waiting on something");
+		}
+	}
+	public void cleanup(){
+		if(bc!=null){
+			bc.removeChannelBrokenListener(this);
+		}
+	}
+	private void listen(RpcChannel c){
+		if (c instanceof BreakableChannel) {
+			BreakableChannel bc = (BreakableChannel) c;
+			bc.addChannelBrokenListener(this);
+		}
+	}
+	@Override
+	public void channelBroken(RpcChannel b) {
+		wl.lock();
+		try {
+			cbr=null;
+			responded=true;
+			wc.signalAll();
+		}finally{
+			wl.unlock();
 		}
 	}
 }

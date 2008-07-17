@@ -69,7 +69,7 @@ public class SocketSupervisor {
 		SimpleRpcController cont = new SimpleRpcController();
 		Exprintdata.Exprintserver service = Exprintdata.Exprintserver
 				.newStub(chan);
-		ResponseWaiter<Exprintdata.ExprintserverSetConfigResponse> waiter = new ResponseWaiter<Exprintdata.ExprintserverSetConfigResponse>();
+		ResponseWaiter<Exprintdata.ExprintserverSetConfigResponse> waiter = new ResponseWaiter<Exprintdata.ExprintserverSetConfigResponse>(chan);
 		Exprintdata.Exprintconfig.Builder reqbld = Exprintdata.Exprintconfig
 				.newBuilder();
 		reqbld.setPrinter("Morrohjørnet");
@@ -85,6 +85,7 @@ public class SocketSupervisor {
 		service.setConfig(cont, reqbld.build(), waiter);
 		try {
 			Exprintdata.ExprintserverSetConfigResponse resp = waiter.await();
+			waiter.cleanup();
 			System.out.println(resp.getResponsecode());
 		} catch (InterruptedException e) {
 			e.printStackTrace();

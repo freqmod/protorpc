@@ -15,9 +15,13 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
+
+import sun.misc.Signal;
 
 import com.google.protobuf.Message;
 import com.google.protobuf.RpcCallback;
@@ -25,6 +29,8 @@ import com.google.protobuf.RpcChannel;
 import com.google.protobuf.RpcController;
 import com.google.protobuf.Service;
 import com.google.protobuf.Descriptors.MethodDescriptor;
+import com.likbilen.protorpc.client.BreakableChannel;
+import com.likbilen.protorpc.client.ChannelBrokenListener;
 import com.likbilen.protorpc.client.SimpleRpcController;
 import com.likbilen.protorpc.proto.Constants;
 import com.likbilen.protorpc.stream.session.SessionManager;
@@ -34,7 +40,7 @@ import com.likbilen.protorpc.tools.DataOutputStream;
 import com.likbilen.protorpc.tools.ThreadTools;
 import com.likbilen.util.Pair;
 
-public class TwoWayStream extends Thread implements SessionManager,RpcChannel{
+public class TwoWayStream extends Thread implements SessionManager,RpcChannel,BreakableChannel{
 	/* protected OutputStream origStream; */
 	protected DataInputStream in;
 	protected DataOutputStream out;
@@ -44,9 +50,14 @@ public class TwoWayStream extends Thread implements SessionManager,RpcChannel{
 	protected Object session=null;
 	protected int callnum=0;
 	private boolean spawnCallers=false;
+	protected int protoversion=-1;
+	public final int maxSupportedProtocolVersion=1;
+	public final int preferedProtocolVesion=maxSupportedProtocolVersion;
 	protected HashMap<Integer,Pair<RpcCallback<Message>,Message>> currentCalls=new HashMap<Integer, Pair<RpcCallback<Message>,Message>>();
 	protected Lock streamlock=new ReentrantLock();
+	protected Condition initcond = streamlock.newCondition();
 	protected RpcCallback<Boolean> shutdownCallback;
+	protected HashSet<ChannelBrokenListener> channelBrokenListeners= new HashSet<ChannelBrokenListener>();
 	public TwoWayStream(InputStream in,OutputStream out){
 		streamChannelConstructor(in, out,null, true);
 	}
@@ -82,7 +93,6 @@ public class TwoWayStream extends Thread implements SessionManager,RpcChannel{
 		Pair<RpcCallback<Message>, Message> msg;
 		try{
 			try {
-				
 				while (connected) {
 					code=in.read();
 					if(Constants.fromCode(code) == Constants.TYPE_DISCONNECT ||code == -1){//disconnected by stream
@@ -90,6 +100,31 @@ public class TwoWayStream extends Thread implements SessionManager,RpcChannel{
 						break;
 					}	
 					try {
+						if(protoversion==-2){
+							streamlock.lock();
+							try{
+								protoversion=in.read();
+								initcond.signalAll();
+							}finally{
+								streamlock.unlock();
+							}
+						}
+						if(protoversion==-1){
+							if(Constants.fromCode(code) != Constants.TYPE_INIT){
+								System.out.println("Invalid code:"+code);
+								break;//invalid
+							}
+							streamlock.lock();
+							try{
+								protoversion=in.read();
+								out.write(Constants.getCode(Constants.TYPE_INIT));
+								protoversion=Math.min(preferedProtocolVesion,protoversion);
+								out.write(protoversion);
+								out.flush();
+							}finally{
+								streamlock.unlock();
+							}
+						}
 						if (Constants.fromCode(code) == Constants.TYPE_MESSAGE&&service!=null) {
 							streamlock.lock();
 							try{
@@ -138,8 +173,15 @@ public class TwoWayStream extends Thread implements SessionManager,RpcChannel{
 			} 
 		}finally{
 			connected=false;
+			streamlock.lock();
+			try{
+				initcond.signalAll();//make sure no caller is waiting for an init signal that will never come
+			}finally{
+				streamlock.unlock();
+			}
 			if(shutdownCallback!=null)
 				shutdownCallback.run(false);
+			fireChannelBroken();
 		}
 	}
 
@@ -193,26 +235,38 @@ public class TwoWayStream extends Thread implements SessionManager,RpcChannel{
 	/**
 	 * From RpcChannel
 	 */
-	public void callMethodThreaded(MethodDescriptor method, RpcController controller,
-			Message request, Message responsePrototype,
-			RpcCallback<Message> done) {
-			try{
-				streamlock.lock();
-				out.write(Constants.getCode(Constants.TYPE_MESSAGE));
-				out.writeUnsignedLittleEndianShort(callnum);
-				out.writeUnsignedLittleEndianShort(method.getIndex());
-				byte[] tmpb=request.toByteArray();
-				out.writeUnsignedLittleEndianShort(tmpb.length);
-				out.write(tmpb);
+	public void callMethodThreaded(MethodDescriptor method,
+			RpcController controller, Message request,
+			Message responsePrototype, RpcCallback<Message> done) {
+		streamlock.lock();
+		try {
+			if (protoversion == -1) {
+				protoversion=-2;
+				out.write(Constants.getCode(Constants.TYPE_INIT));
+				out.write(preferedProtocolVesion);
 				out.flush();
-				currentCalls.put(callnum, new Pair<RpcCallback<Message>, Message>(done,responsePrototype));
-				callnum++;
-			}catch(IOException e){
-				controller.setFailed(e.getMessage());
-			}finally{
-					streamlock.unlock();
+				initcond.await();
+				if(protoversion==-2)
+					return;
 			}
-			
+			out.write(Constants.getCode(Constants.TYPE_MESSAGE));
+			out.writeUnsignedLittleEndianShort(callnum);
+			out.writeUnsignedLittleEndianShort(method.getIndex());
+			byte[] tmpb = request.toByteArray();
+			out.writeUnsignedLittleEndianShort(tmpb.length);
+			out.write(tmpb);
+			out.flush();
+			currentCalls.put(callnum, new Pair<RpcCallback<Message>, Message>(
+					done, responsePrototype));
+			callnum++;
+		} catch (IOException e) {
+			controller.setFailed(e.getMessage());
+		} catch (InterruptedException e) {
+			shutdown(false);
+		} finally {
+			streamlock.unlock();
+		}
+
 	}
 	
 	
@@ -259,6 +313,7 @@ public class TwoWayStream extends Thread implements SessionManager,RpcChannel{
 			}
 			if(shutdownCallback!=null)
 				shutdownCallback.run(false);
+			fireChannelBroken();
 		}
 	}
 	public boolean isRunning() {
@@ -295,6 +350,18 @@ public class TwoWayStream extends Thread implements SessionManager,RpcChannel{
 	public boolean doesSpawnCallers() {
 		return spawnCallers;
 	}
-
+	@Override
+	public void addChannelBrokenListener(ChannelBrokenListener l) {
+		channelBrokenListeners.add(l);
+	}
+	@Override
+	public void removeChannelBrokenListener(ChannelBrokenListener l) {
+		channelBrokenListeners.remove(l);
+	}
+	protected void fireChannelBroken(){
+		for(ChannelBrokenListener l:channelBrokenListeners){
+			l.channelBroken(this);
+		}
+	}
 
 }
