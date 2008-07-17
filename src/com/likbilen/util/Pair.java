@@ -22,7 +22,7 @@ package com.likbilen.util;
 * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
-/*
+/**
  * A container class to put two variables in one slot
  */
 public class Pair<F,L>{

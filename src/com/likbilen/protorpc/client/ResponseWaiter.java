@@ -19,14 +19,25 @@ import com.google.protobuf.RpcCallback;
 import com.google.protobuf.RpcChannel;
 
 /**
- * This class implements a way to make non blocking Rpc calls blocking. It may
- * be used like this: ResponseWaiter<E> waiter = new
- * ResponseWaiter<E>(rpcChannel); service.callMethod(controller,
- * request,waiter); try { E response = waiter.await(); waiter.cleanup();
- * //handle response } catch (InterruptedException e) { //handle exception }
- * catch (TimeoutException e) { //handle exception }
- * waiter.reset(rpcChannel);//if you want to use it again
+ * <p>This class implements a way to make non blocking Rpc calls blocking. It may
+ * be used like this:</p>
+ * <pre>
+ * ResponseWaiter<E> waiter = new ResponseWaiter<E>(rpcChannel);
+ * service.callMethod(controller, request,waiter);
+ * try { 
+ *  	E response = waiter.await(); 
+ *  	waiter.cleanup();
+ * 		
+ * 		//handle response 
  * 
+ * } catch (InterruptedException e) { 
+ * 		//handle exception 
+ * }
+ * catch (TimeoutException e) {
+ * 		 //handle exception 
+ * }
+ * waiter.reset(rpcChannel);//if you want to use it again
+ * </pre>
  * @author Frederik
  * 
  * @param <E>

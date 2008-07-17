@@ -24,7 +24,11 @@ package com.likbilen.protorpc.tools;
 */
 
 import java.lang.reflect.Method;
-
+/**
+ * Toolkit class with static methods
+ * @author Frederik
+ *
+ */
 public class ThreadTools{
 	/**
 	 * Invoke the method in a separate thread

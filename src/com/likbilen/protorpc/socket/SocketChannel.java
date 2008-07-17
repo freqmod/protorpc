@@ -14,8 +14,9 @@ import java.net.Socket;
 
 import com.likbilen.protorpc.stream.TwoWayStream;
 /**
- * A channel that communicates over a socket. The socket must be connected before the channel is connected.
+ * <p>A channel that communicates over a socket. The socket must be connected before the channel is connected.</p>
  * Usage example:
+ * <pre>
  * 		try {
  *			SocketChannel.registerProtocolHandler();
  *			String url= "pbrpc://localhost:port";
@@ -33,7 +34,7 @@ import com.likbilen.protorpc.stream.TwoWayStream;
  *		} catch (IOException e1) {
  *			e1.printStackTrace();
  *		}
- *
+ * </pre>
  * @author Frederik
  */
 public class SocketChannel extends TwoWayStream{

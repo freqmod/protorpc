@@ -18,8 +18,10 @@ import com.google.protobuf.RpcCallback;
 import com.google.protobuf.Service;
 import com.likbilen.protorpc.stream.TwoWayStream;
 /**
- * A server that accepts connections from socket channel
+ * <p>A server that accepts connections from socket channel</p>
+ * 
  * Usage example:
+ * <pre>
  * SocketServer srv = new SocketServer(service);
  * //Make the server shut down when a client disconnects, which makes the program close by itself
  * srv.setShutDownOnDisconnect(true);
@@ -27,6 +29,7 @@ import com.likbilen.protorpc.stream.TwoWayStream;
  * srv.getServerSocket().bind(new InetSocketAddress(port));
  * //Start the server
  * srv.start();
+ * </pre>
  * @author Frederik
  *
  */

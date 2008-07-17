@@ -27,7 +27,6 @@ import com.google.protobuf.RpcChannel;
 import com.google.protobuf.RpcController;
 import com.google.protobuf.Service;
 import com.google.protobuf.Descriptors.MethodDescriptor;
-import com.likbilen.exprint.Exprintservice;
 import com.likbilen.protorpc.client.BreakableChannel;
 import com.likbilen.protorpc.client.ChannelBrokenListener;
 import com.likbilen.protorpc.client.SimpleRpcController;
@@ -38,25 +37,26 @@ import com.likbilen.protorpc.tools.DataOutputStream;
 import com.likbilen.protorpc.tools.ThreadTools;
 import com.likbilen.util.Pair;
 /**
- * The main class. This class implements an rpc channel and a server, that communicates over IO streams.
+ * <p>The main class. This class implements an rpc channel and a server, that communicates over IO streams.</p>
  * Server usage example:
  * 
- * TwoWayStream srv=new TwoWayStream(in,out,service);
+ * <pre>TwoWayStream srv=new TwoWayStream(in,out,service);</pre>
  * where in and out are valid opened streams.
  * 
- * To shutdown server:
- * chan.shutdown(false);
+ * <p>To shutdown server:</p>
+ * <pre>chan.shutdown(false);</pre>
  * 
  * 
- * Client usage example:
+ * <p>Client usage example:</p>
  * 
+ * <pre>
  * TwoWayStream chan=new TwoWayStream(in,out);
  *
  * // call methods by the RpcChannel interface
  *
  * chan.shutdown(false);
- *
- * The channel may be used as a client and server at the same time (even when it is initialized with a service)
+ * </pre>
+ * <p>The channel may be used as a client and server at the same time (even when it is initialized with a service)</p>
  *
  * @author Frederik
  *
