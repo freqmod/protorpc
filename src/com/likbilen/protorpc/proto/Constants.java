@@ -25,8 +25,8 @@ package com.likbilen.protorpc.proto;
 
 public enum Constants {
 	TYPE_INIT,
-	TYPE_MESSAGE,
-	TYPE_BIGMESSAGE,
+	TYPE_REQUEST,
+	TYPE_BIGREQUEST,
 	TYPE_RESPONSE,
 	TYPE_BIGRESPONSE,
 	TYPE_RESPONSE_CANCEL,
@@ -36,9 +36,9 @@ public enum Constants {
 		switch (c) {
 		case TYPE_INIT:
 			return 1;
-		case TYPE_MESSAGE:
+		case TYPE_REQUEST:
 			return 2;
-		case TYPE_BIGMESSAGE:
+		case TYPE_BIGREQUEST:
 			return 3;
 		case TYPE_RESPONSE:
 			return 4;
@@ -57,9 +57,9 @@ public enum Constants {
 		case 1:
 			return TYPE_INIT;
 		case 2:
-			return TYPE_MESSAGE;
+			return TYPE_REQUEST;
 		case 3:
-			return TYPE_MESSAGE;
+			return TYPE_REQUEST;
 		case 4:
 			return TYPE_RESPONSE;
 		case 5:

@@ -125,7 +125,7 @@ public class TwoWayStream extends Thread implements SessionManager,RpcChannel,Br
 								streamlock.unlock();
 							}
 						}
-						if (Constants.fromCode(code) == Constants.TYPE_MESSAGE&&service!=null) {
+						if (Constants.fromCode(code) == Constants.TYPE_REQUEST&&service!=null) {
 							streamlock.lock();
 							try{
 								msgid = in.readUnsignedLittleEndianShort();
@@ -249,7 +249,7 @@ public class TwoWayStream extends Thread implements SessionManager,RpcChannel,Br
 				if(protoversion==-2)
 					return;
 			}
-			out.write(Constants.getCode(Constants.TYPE_MESSAGE));
+			out.write(Constants.getCode(Constants.TYPE_REQUEST));
 			out.writeUnsignedLittleEndianShort(callnum);
 			out.writeUnsignedLittleEndianShort(method.getIndex());
 			byte[] tmpb = request.toByteArray();
