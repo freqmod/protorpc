@@ -41,7 +41,7 @@ public class Supervisor {
 			PipedOutputStream cout= new PipedOutputStream();
 			PipedInputStream sin= new PipedInputStream(cout);
 			PipedOutputStream sout= new PipedOutputStream(cin);
-			TwoWayStream srv=new TwoWayStream(sin,sout,new Exprintservice());
+			TwoWayStream srv=new TwoWayStream(sin,sout,new Exprintservice("",false));
 			setConfiguration(cin,cout);
 			sin.close();
 			cin.close();

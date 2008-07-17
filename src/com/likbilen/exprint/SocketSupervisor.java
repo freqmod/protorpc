@@ -39,12 +39,12 @@ public class SocketSupervisor {
 	public static void main(String[] args) {
 		boolean server=true;
 		boolean client=true;
-		int port=12377;
+		int port=12382;
 		try {
 			
 			SocketChannel.registerProtocolHandler();
 			if(server){
-			SocketServer srv = new SocketServer(new Exprintservice());
+			SocketServer srv = new SocketServer(new Exprintservice("serverservice",true));
 			srv.getServerSocket().bind(new InetSocketAddress(port));
 			srv.start();
 			}
@@ -61,6 +61,7 @@ public class SocketSupervisor {
 			URL endpoint=new URL(url);
 			Socket soc=new Socket(endpoint.getHost(),endpoint.getPort());
 			chan = new SocketChannel(soc);
+			chan.setService(new Exprintservice("clientservice",false));
 		} catch (IOException e1) {
 			e1.printStackTrace();
 			return;

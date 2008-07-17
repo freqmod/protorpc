@@ -28,7 +28,7 @@ import com.google.protobuf.Descriptors.MethodDescriptor;
 import com.likbilen.protorpc.client.SimpleRpcController;
 import com.likbilen.protorpc.proto.Constants;
 import com.likbilen.protorpc.stream.session.SessionManager;
-import com.likbilen.protorpc.stream.session.SessionRpcControllerImpl;
+import com.likbilen.protorpc.stream.session.TwoWayRpcController;
 import com.likbilen.protorpc.tools.DataInputStream;
 import com.likbilen.protorpc.tools.DataOutputStream;
 import com.likbilen.protorpc.tools.ThreadTools;
@@ -39,7 +39,7 @@ public class TwoWayStream extends Thread implements SessionManager,RpcChannel{
 	protected DataInputStream in;
 	protected DataOutputStream out;
 	protected int timeout = 10000;
-	protected Service service;
+	protected Service service=null;
 	protected boolean connected=false;
 	protected Object session=null;
 	protected int callnum=0;
@@ -99,7 +99,7 @@ public class TwoWayStream extends Thread implements SessionManager,RpcChannel{
 								in.readFully(tmpb, timeout);
 								request = service.getRequestPrototype(method)
 										.newBuilderForType().mergeFrom(tmpb).build();
-								controller = new SessionRpcControllerImpl(this);
+								controller = new TwoWayRpcController(this);
 								controller.notifyOnCancel(new StreamServerCallback<Object>(
 												this, msgid));
 							}finally{
@@ -276,5 +276,14 @@ public class TwoWayStream extends Thread implements SessionManager,RpcChannel{
 	public void setSessionId(Object id) {
 		this.session=id;
 	}
+	public Service getService() {
+		return service;
+	}
+	public void setService(Service service) throws IllegalStateException{
+		if(this.service!=null)
+			throw new IllegalStateException("Service allready set to:"+service);
+		this.service = service;
+	}
+
 
 }

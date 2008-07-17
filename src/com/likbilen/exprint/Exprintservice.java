@@ -26,21 +26,50 @@ package com.likbilen.exprint;
 import com.google.protobuf.RpcCallback;
 import com.google.protobuf.RpcController;
 import com.likbilen.exprint.Exprintdata.Exprintconfig;
+import com.likbilen.protorpc.client.SimpleRpcController;
+import com.likbilen.protorpc.stream.session.TwoWayRpcChannelController;
 
-public class Exprintservice extends Exprintdata.Exprintserver{
-	public Exprintservice(){
-		
+public class Exprintservice extends Exprintdata.Exprintserver implements RpcCallback<Exprintdata.ExprintserverSetConfigResponse>{
+	String id;
+	boolean twoway;
+	public Exprintservice(String id,boolean twoway){
+		this.id=id;
+		this.twoway=twoway;
 	}
 	@Override
 	public void setConfig(RpcController controller, Exprintconfig request,
 			RpcCallback<Exprintdata.ExprintserverSetConfigResponse> done) {
-		String ret =request.getPrinter();
+		String ret =id+":"+request.getPrinter();
 		for(Exprintdata.Exprintconfig.Exprint exp:request.getExprintsList()){
 			ret+="|"+exp.getSubjectcode()+";"+exp.getParalell()+";"+(exp.getSolutions()?"jippi":"buu");
 		}
 		Exprintdata.ExprintserverSetConfigResponse.Builder resp=  Exprintdata.ExprintserverSetConfigResponse.newBuilder();
 		resp.setResponsecode(ret);
 		done.run(resp.build());
+		if(twoway)
+			callBack(controller);
+	}
+	private void callBack(RpcController controller){
+		if(!(controller instanceof TwoWayRpcChannelController))
+			return;
+		TwoWayRpcChannelController twc=(TwoWayRpcChannelController)controller;
+		SimpleRpcController cont = new SimpleRpcController();
+		Exprintdata.Exprintserver service = Exprintdata.Exprintserver
+				.newStub(twc.getRpcChannel());
+		Exprintdata.Exprintconfig.Builder reqbld = Exprintdata.Exprintconfig
+				.newBuilder();
+		reqbld.setPrinter("Masmasmas");
+		Exprintdata.Exprintconfig.Exprint.Builder expb;
+		expb = Exprintdata.Exprintconfig.Exprint.newBuilder();
+		expb.setParalell("SadHour");
+		expb.setSubjectcode("TMA4140");
+		expb.setSolutions(true);
+		reqbld.addExprints(expb);
+		service.setConfig(cont, reqbld.build(), this);
+		System.out.println("Sent callback");
+	}
+	public void run(Exprintdata.ExprintserverSetConfigResponse r){
+		System.out.println("Got response:"+r.getResponsecode());
 	}
 	
 }
