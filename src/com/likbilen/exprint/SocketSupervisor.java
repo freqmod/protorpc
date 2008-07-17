@@ -39,7 +39,7 @@ public class SocketSupervisor {
 	public static void main(String[] args) {
 		boolean server=true;
 		boolean client=true;
-		int port=12382;
+		int port=12387;
 		try {
 			
 			SocketChannel.registerProtocolHandler();

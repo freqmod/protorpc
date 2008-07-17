@@ -66,10 +66,11 @@ public class Exprintservice extends Exprintdata.Exprintserver implements RpcCall
 		expb.setSolutions(true);
 		reqbld.addExprints(expb);
 		service.setConfig(cont, reqbld.build(), this);
-		System.out.println("Sent callback");
 	}
 	public void run(Exprintdata.ExprintserverSetConfigResponse r){
 		System.out.println("Got response:"+r.getResponsecode());
 	}
-	
+	public String toString(){
+		return "Exprintservice@"+twoway+":"+id;
+	}
 }

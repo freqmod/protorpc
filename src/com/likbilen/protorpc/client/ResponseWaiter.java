@@ -33,6 +33,8 @@ public class ResponseWaiter<E> implements RpcCallback<E>{
 		return await(timeout, TimeUnit.MILLISECONDS);
 	}
 	public E await(long timeout,TimeUnit unit) throws InterruptedException,TimeoutException{
+		if(responded)
+			return cbr;
 		wl.lock();
 		al.lock();
 		try{
