@@ -43,6 +43,7 @@ public class TwoWayStream extends Thread implements SessionManager,RpcChannel{
 	protected boolean connected=false;
 	protected Object session=null;
 	protected int callnum=0;
+	private boolean spawnCallers=false;
 	protected HashMap<Integer,Pair<RpcCallback<Message>,Message>> currentCalls=new HashMap<Integer, Pair<RpcCallback<Message>,Message>>();
 	protected Lock streamlock=new ReentrantLock();
 	protected RpcCallback<Boolean> shutdownCallback;
@@ -173,16 +174,20 @@ public class TwoWayStream extends Thread implements SessionManager,RpcChannel{
 	public void callMethod(MethodDescriptor method, RpcController controller,
 			Message request, Message responsePrototype,
 			RpcCallback<Message> done) {
-		Class<?> paramTypes[]={MethodDescriptor.class,RpcController.class,Message.class,Message.class,RpcCallback.class};
-		Object params[]={method,controller,request,responsePrototype,done};
-		try {
-			ThreadTools.invokeInSeparateThread(getClass().getMethod("callMethodThreaded", paramTypes), this,params);
-		} catch (SecurityException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (NoSuchMethodException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+		if(spawnCallers){
+			Class<?> paramTypes[]={MethodDescriptor.class,RpcController.class,Message.class,Message.class,RpcCallback.class};
+			Object params[]={method,controller,request,responsePrototype,done};
+			try {
+				ThreadTools.invokeInSeparateThread(getClass().getMethod("callMethodThreaded", paramTypes), this,params);
+			} catch (SecurityException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (NoSuchMethodException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}else{
+			callMethodThreaded(method, controller, request, responsePrototype, done);
 		}
 	}
 	/**
@@ -283,6 +288,12 @@ public class TwoWayStream extends Thread implements SessionManager,RpcChannel{
 		if(this.service!=null)
 			throw new IllegalStateException("Service allready set to:"+service);
 		this.service = service;
+	}
+	public void setSpawnCallers(boolean spawnCallers) {
+		this.spawnCallers = spawnCallers;
+	}
+	public boolean doesSpawnCallers() {
+		return spawnCallers;
 	}
 
 
