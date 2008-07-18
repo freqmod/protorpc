@@ -39,6 +39,7 @@ public enum Constants {
 	 */
 	TYPE_BIGRESPONSE,
 	TYPE_RESPONSE_CANCEL,
+	TYPE_RESPONSE_NOT_IMPLEMENTED,
 	TYPE_DISCONNECT,
 	TYPE_UNKNOWN;
 	/**
@@ -58,8 +59,10 @@ public enum Constants {
 			return 5;
 		case TYPE_RESPONSE_CANCEL:
 			return 6;
-		case TYPE_DISCONNECT:
+		case TYPE_RESPONSE_NOT_IMPLEMENTED:
 			return 7;
+		case TYPE_DISCONNECT:
+			return 8;
 		default:
 			return 255;
 		}
@@ -83,6 +86,8 @@ public enum Constants {
 		case 6:
 			return TYPE_RESPONSE_CANCEL;
 		case 7:
+			return TYPE_RESPONSE_NOT_IMPLEMENTED;
+		case 8:
 			return TYPE_DISCONNECT;
 		default:
 			return TYPE_UNKNOWN;

@@ -34,6 +34,7 @@ import com.likbilen.protorpc.proto.Constants;
 import com.likbilen.protorpc.stream.session.SessionManager;
 import com.likbilen.util.Pair;
 import com.likbilen.util.ThreadTools;
+import com.likbilen.util.Trio;
 import com.likbilen.util.stream.DataInputStream;
 import com.likbilen.util.stream.DataOutputStream;
 /**
@@ -73,7 +74,7 @@ public class TwoWayStream extends Object implements SessionManager,RpcChannel{
 	 */
 	public final int maxSupportedProtocolVersion=1;
 	private final int preferedProtocolVesion=maxSupportedProtocolVersion;
-	private HashMap<Integer,Pair<RpcCallback<Message>,Message>> currentCalls=new HashMap<Integer, Pair<RpcCallback<Message>,Message>>();
+	private HashMap<Integer,Trio<RpcCallback<Message>,RpcController, Message>> currentCalls=new HashMap<Integer, Trio<RpcCallback<Message>,RpcController ,Message>>();
 	private Lock streamlock=new ReentrantLock();
 	private Condition initcond = streamlock.newCondition();
 	private RpcCallback<Boolean> shutdownCallback;
@@ -189,8 +190,8 @@ public class TwoWayStream extends Object implements SessionManager,RpcChannel{
 			out.write(tmpb);
 			out.flush();
 			
-			currentCalls.put(callnum, new Pair<RpcCallback<Message>, Message>(
-					done, responsePrototype));
+			currentCalls.put(callnum, new Trio<RpcCallback<Message>,RpcController, Message>(
+					done, controller,responsePrototype));
 			callnum++;
 		} catch (IOException e) {
 			controller.setFailed(e.getMessage());
@@ -273,12 +274,12 @@ public class TwoWayStream extends Object implements SessionManager,RpcChannel{
 		 */
 		@Override
 		public void run() {
-			MethodDescriptor method;
+			MethodDescriptor method=null;
 			Message request;
 			SimpleRpcController controller;
-			byte tmpb[];
-			int code = 0, msgid, msglen;
-			Pair<RpcCallback<Message>, Message> msg;
+			byte tmpb[]=new byte[0];
+			int code = 0, msgid, msglen,metid;
+			Trio<RpcCallback<Message>,RpcController, Message> msg;
 			try{
 				try {
 					while (connected) {
@@ -314,23 +315,31 @@ public class TwoWayStream extends Object implements SessionManager,RpcChannel{
 							}
 							if (Constants.fromCode(code) == Constants.TYPE_REQUEST&&service!=null) {
 								streamlock.lock();
+								metid=-1;
 								try{
 									msgid = in.readUnsignedLittleEndianShort();
-									method = service.getDescriptorForType().getMethods()
-											.get(in.readUnsignedLittleEndianShort());
-									tmpb = new byte[in.readUnsignedLittleEndianShort()];
-									in.readFully(tmpb, timeout);
-									request = service.getRequestPrototype(method)
-											.newBuilderForType().mergeFrom(tmpb).build();
-									controller = new TwoWayRpcController(encloser);
-									controller.notifyOnCancel(new StreamServerCallback<Object>(
-													this, msgid));
+									metid = in.readUnsignedLittleEndianShort();
+									if(metid<service.getDescriptorForType().getMethods().size()){
+										method=service.getDescriptorForType().getMethods().get(metid);
+										tmpb = new byte[in.readUnsignedLittleEndianShort()];
+										in.readFully(tmpb, timeout);
+									}else{
+										out.write(Constants.getCode(Constants.TYPE_RESPONSE_NOT_IMPLEMENTED));
+										out.writeUnsignedLittleEndianShort(metid);
+									}
 								}finally{
 									streamlock.unlock();
 								}
-								service.callMethod(method, controller, request,
+								if(metid!=-1&&metid<service.getDescriptorForType().getMethods().size()){
+									request = service.getRequestPrototype(method)
+									.newBuilderForType().mergeFrom(tmpb).build();
+									controller = new TwoWayRpcController(encloser);
+									controller.notifyOnCancel(new StreamServerCallback<Object>(
+													this, msgid));
+									service.callMethod(method, controller, request,
 												new StreamServerCallback<Message>(this,
 														msgid));
+								}
 							}else if (Constants.fromCode(code) == Constants.TYPE_RESPONSE) {
 								streamlock.lock();
 								try{
@@ -347,11 +356,34 @@ public class TwoWayStream extends Object implements SessionManager,RpcChannel{
 								}finally{
 									streamlock.unlock();
 								}
+							}else if (Constants.fromCode(code) == Constants.TYPE_RESPONSE_CANCEL) {
+								streamlock.lock();
+								try{
+									msgid = in.readUnsignedLittleEndianShort();
+									if (currentCalls.containsKey(new Integer(msgid))) {
+										msg = currentCalls.get(new Integer(msgid));//get controller
+										msg.middle.startCancel();
+										currentCalls.remove(new Integer(msgid));
+									}
+								}finally{
+									streamlock.unlock();
+								}
+							}else if (Constants.fromCode(code) == Constants.TYPE_RESPONSE_NOT_IMPLEMENTED) {
+								streamlock.lock();
+								try{
+									msgid = in.readUnsignedLittleEndianShort();
+									if (currentCalls.containsKey(new Integer(msgid))) {
+										msg = currentCalls.get(new Integer(msgid));//get controller
+										msg.middle.setFailed("Not implemented by peer");
+										currentCalls.remove(new Integer(msgid));
+									}
+								}finally{
+									streamlock.unlock();
+								}
 							}else{//empty buffer
 								in.skip(in.available());
 							}
 						} catch (TimeoutException e) {
-							// TODO Auto-generated catch block
 							e.printStackTrace();
 						}
 					}

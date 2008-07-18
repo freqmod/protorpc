@@ -40,4 +40,5 @@ message ExprintserverSetConfigResponse {
 }
 service Exprintserver {
   rpc set_config (Exprintconfig) returns (ExprintserverSetConfigResponse);
+  
 };
