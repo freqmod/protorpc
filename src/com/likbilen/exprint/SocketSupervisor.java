@@ -43,7 +43,7 @@ public class SocketSupervisor {
 	public static void main(String[] args) {
 		boolean server=true;
 		boolean client=true;
-		int port=12387;
+		int port=1234;
 		try {
 			//Register the dummy protcol handler so we can use pbrpc url's to parse urls.
 			SocketChannel.registerProtocolHandler();
@@ -99,7 +99,7 @@ public class SocketSupervisor {
 		expb.setSubjectcode("TDT4100");
 		reqbld.addExprints(expb);
 		//Run RPC the method 
-		service.setConfig(cont, reqbld.build(), waiter);
+		service.setConfig(cont, reqbld.build(), waiter.getCallback());
 		try {
 			//Wait for response, if the response is  null, the method is canceled or has failed and the rpc controller will report what happened. 
 			Exprintdata.ExprintserverSetConfigResponse resp = waiter.await();

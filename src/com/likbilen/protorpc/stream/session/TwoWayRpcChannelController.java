@@ -7,5 +7,8 @@ import com.google.protobuf.RpcChannel;
  *
  */
 public interface TwoWayRpcChannelController  {
+	/**
+	 * Returns the rpc channel that may be used to call methods on the other side
+	 */
 	public RpcChannel getRpcChannel();
 }

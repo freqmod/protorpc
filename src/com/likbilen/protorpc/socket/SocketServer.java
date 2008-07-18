@@ -33,12 +33,13 @@ import com.likbilen.protorpc.stream.TwoWayStream;
  * @author Frederik
  *
  */
-public class SocketServer extends Thread implements RpcCallback<Boolean>{
-	protected ServerSocket ssc;
-	protected boolean running;
-	protected Service service;
-	protected HashSet<TwoWayStream> streamServers=new HashSet<TwoWayStream>();
-	protected boolean shutDownOnDisconnect=false;
+public class SocketServer{
+	private ServerSocket ssc;
+	private boolean running;
+	private Service service;
+	private HashSet<TwoWayStream> streamServers=new HashSet<TwoWayStream>();
+	private boolean shutDownOnDisconnect=false;
+	private SocketServerPrivate priv=new SocketServerPrivate();
 	/**
 	 * Create a socket server, the ServerSocket available from getServerSocket() should be called before it is started.
 	 * @param server
@@ -54,27 +55,14 @@ public class SocketServer extends Thread implements RpcCallback<Boolean>{
 	public ServerSocket getServerSocket(){
 		return ssc;
 	}
-	public void run(){
-		Socket client;
-		try{
-			while(running){
-				client=ssc.accept();
-				TwoWayStream ss=new TwoWayStream(client.getInputStream(),client.getOutputStream(),service,this);
-				streamServers.add(ss);
-			}
-		}catch(IOException e){
-			//don't handle, most probably shut down
-		}finally{
-			running=false;
-		}
-	}
+
 	/**
 	 * Start this server socket. The server socket should be set up before calling this method.
 	 */
 	public void start(){
 		if(!running){
 			running=true;
-			super.start();
+			priv.start();
 		}
 	}
 	/**
@@ -85,7 +73,7 @@ public class SocketServer extends Thread implements RpcCallback<Boolean>{
 		if(running){
 			running=false;
 			try{
-				interrupt();
+				priv.interrupt();
 			}catch(SecurityException e){
 				
 			}
@@ -99,11 +87,6 @@ public class SocketServer extends Thread implements RpcCallback<Boolean>{
 			}
 		}
 	}
-	@Override
-	public void run(Boolean parameter) {
-		if(shutDownOnDisconnect)
-			shutdown(parameter);
-	}
 	/**
 	 * Should this socket shut down if a client disconnects from it?
 	 */
@@ -115,5 +98,26 @@ public class SocketServer extends Thread implements RpcCallback<Boolean>{
 	 */
 	public void setShutDownOnDisconnect(boolean shutDownOnDisconnect) {
 		this.shutDownOnDisconnect = shutDownOnDisconnect;
+	}
+	class SocketServerPrivate extends Thread  implements RpcCallback<Boolean>{
+		public void run(){
+			Socket client;
+			try{
+				while(running){
+					client=ssc.accept();
+					TwoWayStream ss=new TwoWayStream(client.getInputStream(),client.getOutputStream(),service,this);
+					streamServers.add(ss);
+				}
+			}catch(IOException e){
+				//don't handle, most probably shut down
+			}finally{
+				running=false;
+			}
+		}		
+		@Override
+		public void run(Boolean parameter) {
+			if(shutDownOnDisconnect)
+				shutdown(parameter);
+		}
 	}
 }

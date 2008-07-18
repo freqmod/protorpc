@@ -1,4 +1,4 @@
-package com.likbilen.protorpc.tools;
+package com.likbilen.util;
 
 /*
 * Copyright (C) 2008 Frederik M.J. Vestre
@@ -24,20 +24,48 @@ package com.likbilen.protorpc.tools;
 */
 
 import java.lang.reflect.Method;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 /**
- * Toolkit class with static methods
- * @author Frederik
+ * Class that invokes methods in separate a thread
+ * @author freqmod
  *
  */
-public class ThreadTools{
-	/**
-	 * Invoke the method in a separate thread
-	 * @param m - the method to invoke
-	 * @param instance - the instance to invoke the method on, or null if the method is static
-	 * @param arguments - the arguments to pass to the method
-	 */
-	public static void invokeInSeparateThread(Method m,Object instance,Object[] arguments){
-		ThreadInvoker i= new ThreadInvoker(m,instance,arguments,false);
-		i.start();
-	}	
+class ThreadInvoker extends Thread{
+	private Method m;
+	private Object instance;
+	private Object[] arguments;
+	private Lock exlock=new ReentrantLock();
+	private Exception ex;
+	private boolean quiet;
+	public ThreadInvoker(Method m,Object instance,Object[] arguments,boolean quiet){
+		this.m=m;
+		this.instance=instance;
+		this.arguments=arguments;
+		this.quiet=quiet;
+	}
+	public void run(){
+		try {
+			m.invoke(instance,arguments);
+		} catch (Exception e) {
+			if(!quiet){
+				System.out.println("Invokelater failed:"+e.getMessage());
+				e.printStackTrace();
+			}
+			exlock.lock();
+			try{
+				ex=e;
+			}finally{
+				exlock.unlock();
+			}
+		}
+	}
+	public Exception gotException(){
+		try{
+			exlock.lock();
+			return ex;
+		}finally{
+			exlock.unlock();
+		}
+	}
 }

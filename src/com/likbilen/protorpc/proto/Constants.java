@@ -29,12 +29,21 @@ package com.likbilen.protorpc.proto;
 public enum Constants {
 	TYPE_INIT,
 	TYPE_REQUEST,
+	/**
+	 * Not used as of version 1 of the protocol
+	 */
 	TYPE_BIGREQUEST,
 	TYPE_RESPONSE,
+	/**
+	 * Not used as of version 1 of the protocol
+	 */
 	TYPE_BIGRESPONSE,
 	TYPE_RESPONSE_CANCEL,
 	TYPE_DISCONNECT,
 	TYPE_UNKNOWN;
+	/**
+	 * Convert enum values to codes that may be sent on the wire
+	 */
 	public static int getCode(Constants c){
 		switch (c) {
 		case TYPE_INIT:
@@ -55,6 +64,10 @@ public enum Constants {
 			return 255;
 		}
 	}
+	/**
+	 * Convert codes that may be recieved on the wire to enum values
+	 */
+
 	public static Constants fromCode(int b){
 		switch (b) {
 		case 1:

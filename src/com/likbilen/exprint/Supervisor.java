@@ -80,7 +80,7 @@ public class Supervisor {
 		 expb.setSubjectcode("TDT4100");
 		 reqbld.addExprints(expb);
 		 //Run the RPC method
-		 service.setConfig(cont, reqbld.build(),waiter);
+		 service.setConfig(cont, reqbld.build(),waiter.getCallback());
 		 try {
 			//Wait for response, if the response is  null, the method is canceled or has failed and the rpc controller will report what happened.
 			Exprintdata.ExprintserverSetConfigResponse resp =waiter.await();

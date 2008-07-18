@@ -13,8 +13,8 @@ import com.google.protobuf.RpcCallback;
 
 class StreamServerCallback<E> implements RpcCallback<E>{
 	private Integer id;
-	private TwoWayStream srv;
-	public StreamServerCallback(TwoWayStream srv,Integer id){
+	private TwoWayStream.HiddenMethods srv;
+	public StreamServerCallback(TwoWayStream.HiddenMethods srv,Integer id){
 		this.id=id;
 		this.srv=srv;
 	}

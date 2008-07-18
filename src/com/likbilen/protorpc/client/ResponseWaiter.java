@@ -23,7 +23,7 @@ import com.google.protobuf.RpcChannel;
  * be used like this:</p>
  * <pre>
  * ResponseWaiter<E> waiter = new ResponseWaiter<E>(rpcChannel);
- * service.callMethod(controller, request,waiter);
+ * service.callMethod(controller, request,waiter.getCallback());
  * try { 
  *  	E response = waiter.await(); 
  *  	waiter.cleanup();
@@ -43,7 +43,7 @@ import com.google.protobuf.RpcChannel;
  * @param <E>
  *            - the callback type for the Rpc call
  */
-public class ResponseWaiter<E> implements RpcCallback<E>, ChannelBrokenListener {
+public class ResponseWaiter<E>{
 	private boolean responded;
 	// RpcCallback<E> cb;
 	private ReentrantLock wl = new ReentrantLock();
@@ -51,6 +51,7 @@ public class ResponseWaiter<E> implements RpcCallback<E>, ChannelBrokenListener 
 	private ReentrantLock al = new ReentrantLock();
 	private E cbr;
 	private BreakableChannel bc;
+	private ResponseWaiterPrivate priv = new ResponseWaiterPrivate();
 
 	/**
 	 * @param channel
@@ -128,20 +129,6 @@ public class ResponseWaiter<E> implements RpcCallback<E>, ChannelBrokenListener 
 
 	}
 
-	/**
-	 * Called by the callback to signalize that a response has arrived
-	 */
-	@Override
-	public void run(E param) {
-		wl.lock();
-		try {
-			cbr = param;
-			responded = true;
-			wc.signalAll();
-		} finally {
-			wl.unlock();
-		}
-	}
 
 	/**
 	 * Reset the waiter to make it wait for new responses
@@ -172,30 +159,41 @@ public class ResponseWaiter<E> implements RpcCallback<E>, ChannelBrokenListener 
 	 */
 	public void cleanup() {
 		if (bc != null) {
-			bc.removeChannelBrokenListener(this);
+			bc.removeChannelBrokenListener(priv);
 		}
 	}
 
 	private void listen(RpcChannel c) {
 		if (c != null && c instanceof BreakableChannel) {
 			BreakableChannel bc = (BreakableChannel) c;
-			bc.addChannelBrokenListener(this);
+			bc.addChannelBrokenListener(priv);
 		}
 	}
-
-	/**
-	 * Called by the (Breakable)RpcChannel to signalize that the channel is
-	 * breaked. Stops the waiting and sets the result to null
-	 */
-	@Override
-	public void channelBroken(RpcChannel b) {
-		wl.lock();
-		try {
-			cbr = null;
-			responded = true;
-			wc.signalAll();
-		} finally {
-			wl.unlock();
+	public RpcCallback<E> getCallback(){
+		return priv;
+	}
+	class ResponseWaiterPrivate implements RpcCallback<E>, ChannelBrokenListener {
+		@Override
+		public void channelBroken(RpcChannel b) {
+			wl.lock();
+			try {
+				cbr = null;
+				responded = true;
+				wc.signalAll();
+			} finally {
+				wl.unlock();
+			}
+		}
+		@Override
+		public void run(E param) {
+			wl.lock();
+			try {
+				cbr = param;
+				responded = true;
+				wc.signalAll();
+			} finally {
+				wl.unlock();
+			}
 		}
 	}
 }

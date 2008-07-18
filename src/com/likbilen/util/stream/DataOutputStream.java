@@ -1,4 +1,4 @@
-package com.likbilen.protorpc.tools;
+package com.likbilen.util.stream;
 
 import java.io.IOException;
 import java.io.OutputStream;
