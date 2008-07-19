@@ -32,7 +32,6 @@ import com.likbilen.protorpc.client.ChannelBrokenListener;
 import com.likbilen.protorpc.client.SimpleRpcController;
 import com.likbilen.protorpc.proto.Constants;
 import com.likbilen.protorpc.stream.session.SessionManager;
-import com.likbilen.util.Pair;
 import com.likbilen.util.ThreadTools;
 import com.likbilen.util.Trio;
 import com.likbilen.util.stream.DataInputStream;
@@ -45,7 +44,7 @@ import com.likbilen.util.stream.DataOutputStream;
  * 
  * <p>To shutdown server:</p>
  * <pre>chan.shutdown(false);</pre>
- * 
+ * O
  * <h4>Client usage example:</h4>
  * <pre>
  * TwoWayStream chan=new TwoWayStream(in,out);
