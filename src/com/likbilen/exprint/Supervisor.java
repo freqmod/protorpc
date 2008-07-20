@@ -51,6 +51,7 @@ public class Supervisor {
 			PipedInputStream sin= new PipedInputStream(cout);
 			PipedOutputStream sout= new PipedOutputStream(cin);
 			//Create a "server" that wraps a service
+			@SuppressWarnings("unused")
 			TwoWayStream srv=new TwoWayStream(sin,sout,new Exprintservice("",false));
 			setConfiguration(cin,cout);
 			//Close the streams

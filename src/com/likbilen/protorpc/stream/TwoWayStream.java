@@ -428,7 +428,7 @@ public class TwoWayStream extends Object implements SessionManager,RpcChannel,Se
 								gotDescriptorCallback=null;
 							}
 						}else{//empty buffer
-							in.skip(in.available());
+							//in.skip(in.available());
 						}
 					}
 				} catch (IOException e) {
