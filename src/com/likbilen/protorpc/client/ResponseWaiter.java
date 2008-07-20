@@ -19,31 +19,35 @@ import com.google.protobuf.RpcCallback;
 import com.google.protobuf.RpcChannel;
 
 /**
- * <p>This class implements a way to make non blocking Rpc calls blocking. It may
- * be used like this:</p>
- * <pre>
- * ResponseWaiter<E> waiter = new ResponseWaiter<E>(rpcChannel);
- * service.callMethod(controller, request,waiter.getCallback());
- * try { 
- *  	E response = waiter.await(); 
- *  	waiter.cleanup();
- * 		
- * 		//handle response 
+ * <p>
+ * This class implements a way to make non blocking Rpc calls blocking. It may
+ * be used like this:
+ * </p>
  * 
- * } catch (InterruptedException e) { 
- * 		//handle exception 
- * }
- * catch (TimeoutException e) {
- * 		 //handle exception 
+ * <pre>
+ * ResponseWaiter&lt;E&gt; waiter = new ResponseWaiter&lt;E&gt;(breakableRpcChannel);
+ * SimpleRpcController cont=new SimpleRpcController();
+ * service.callMethod(cont, request, waiter.getCallback());
+ * try {
+ * 	E response = waiter.await();
+ * 	waiter.cleanup();
+ * 
+ * 	//handle response 
+ * 
+ * } catch (InterruptedException e) {
+ * 	//handle exception 
+ * } catch (TimeoutException e) {
+ * 	//handle exception 
  * }
  * waiter.reset(rpcChannel);//if you want to use it again
  * </pre>
+ * 
  * @author Frederik
  * 
  * @param <E>
  *            - the callback type for the Rpc call
  */
-public class ResponseWaiter<E>{
+public class ResponseWaiter<E> {
 	private boolean responded;
 	// RpcCallback<E> cb;
 	private ReentrantLock wl = new ReentrantLock();
@@ -52,15 +56,14 @@ public class ResponseWaiter<E>{
 	private E cbr;
 	private BreakableChannel bc;
 	private ResponseWaiterPrivate priv = new ResponseWaiterPrivate();
-
+	private CallbackRpcController co;
 	/**
-	 * @param channel
-	 *            if null, or doesnt implement BreakableRpcChannel the waiter
-	 *            will wait infinitly if the channel is broken and it doesn't
-	 *            timeout
+	 * @param ch Channel that should notify the waiter if it is broken
+	 * @param co Controller that should notify the waiter if the call 
+	 * 			is canceled or fails 
 	 */
-	public ResponseWaiter(RpcChannel channel) {
-		listen(channel);
+	public ResponseWaiter(BreakableChannel ch, CallbackRpcController co) {
+		listen(ch, co);
 	}
 
 	/**
@@ -129,7 +132,6 @@ public class ResponseWaiter<E>{
 
 	}
 
-
 	/**
 	 * Reset the waiter to make it wait for new responses
 	 * 
@@ -138,13 +140,13 @@ public class ResponseWaiter<E>{
 	 *            will wait infinitly if the channel is broken and it doesn't
 	 *            timeout
 	 */
-	public void reset(RpcChannel newchan) {
+	public void reset(BreakableChannel newchan,CallbackRpcController newco) {
 		if (al.tryLock()) {
 			try {
 				cbr = null;
 				responded = false;
 				cleanup();
-				listen(newchan);
+				listen(newchan,newco);
 			} finally {
 				al.unlock();
 			}
@@ -161,18 +163,29 @@ public class ResponseWaiter<E>{
 		if (bc != null) {
 			bc.removeChannelBrokenListener(priv);
 		}
+		if (co != null) {
+			bc.removeChannelBrokenListener(priv);
+		}
+
 	}
 
-	private void listen(RpcChannel c) {
-		if (c != null && c instanceof BreakableChannel) {
-			BreakableChannel bc = (BreakableChannel) c;
+	private void listen(BreakableChannel bc,CallbackRpcController co) {
+		if (bc != null ) {
+			this.bc=bc;
 			bc.addChannelBrokenListener(priv);
 		}
+		if (co != null) {
+			this.co=co;
+			co.addControllerInfoListener(priv);
+		}
 	}
-	public RpcCallback<E> getCallback(){
+
+	public RpcCallback<E> getCallback() {
 		return priv;
 	}
-	class ResponseWaiterPrivate implements RpcCallback<E>, ChannelBrokenListener {
+
+	class ResponseWaiterPrivate implements RpcCallback<E>,
+			ChannelBrokenListener,ControllerInfoListener {
 		@Override
 		public void channelBroken(RpcChannel b) {
 			wl.lock();
@@ -184,11 +197,36 @@ public class ResponseWaiter<E>{
 				wl.unlock();
 			}
 		}
+
 		@Override
 		public void run(E param) {
 			wl.lock();
 			try {
 				cbr = param;
+				responded = true;
+				wc.signalAll();
+			} finally {
+				wl.unlock();
+			}
+		}
+
+		@Override
+		public void methodCanceled() {
+			wl.lock();
+			try {
+				cbr = null;
+				responded = true;
+				wc.signalAll();
+			} finally {
+				wl.unlock();
+			}
+		}
+
+		@Override
+		public void methodFailed(String reason) {
+			wl.lock();
+			try {
+				cbr = null;
 				responded = true;
 				wc.signalAll();
 			} finally {

@@ -19,11 +19,12 @@ import com.google.protobuf.RpcController;
  * @author Frederik
  *
  */
-public class SimpleRpcController implements RpcController {
+public class SimpleRpcController implements RpcController,CallbackRpcController {
 	private String reason;
 	private boolean hasFailed;
 	private boolean canceled;
-	HashSet<RpcCallback<Object>> cancelListeners=new HashSet<RpcCallback<Object>>();
+	private HashSet<RpcCallback<Object>> cancelListeners = new HashSet<RpcCallback<Object>>();
+	private HashSet<ControllerInfoListener> controllerInfoListeners= new HashSet<ControllerInfoListener>();
 	public SimpleRpcController(){
 		reset();
 	}
@@ -60,7 +61,9 @@ public class SimpleRpcController implements RpcController {
 
 	@Override
 	public void setFailed(String reason) {
+		this.hasFailed=true;
 		this.reason=reason;
+		fireMethodFailed(reason);
 	}
 
 	@Override
@@ -69,6 +72,23 @@ public class SimpleRpcController implements RpcController {
 		for(RpcCallback<Object> callback:cancelListeners){
 			callback.run(null);
 		}
+		for(ControllerInfoListener l:controllerInfoListeners){
+			l.methodCanceled();
+		}
 	}
+	@Override
+	public void addControllerInfoListener(ControllerInfoListener l) {
+		controllerInfoListeners.add(l);
+	}
+	@Override
+	public void removeControllerInfoListener(ControllerInfoListener l) {
+		controllerInfoListeners.remove(l);
+	}
+	private void fireMethodFailed(String reason){
+		for(ControllerInfoListener l:controllerInfoListeners){
+			l.methodFailed(reason);
+		}
+	}
+
 
 }

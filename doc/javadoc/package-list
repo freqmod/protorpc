@@ -1,3 +1,4 @@
+com.likbilen.protorpc
 com.likbilen.protorpc.client
 com.likbilen.protorpc.proto
 com.likbilen.protorpc.proto.handlers.pbrpc

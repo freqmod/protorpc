@@ -84,7 +84,7 @@ public class SocketSupervisor {
 		Exprintdata.Exprintserver service = Exprintdata.Exprintserver
 				.newStub(chan);
 		//Create a responsewaiter that can block while waiting a response from the server
-		ResponseWaiter<Exprintdata.ExprintserverSetConfigResponse> waiter = new ResponseWaiter<Exprintdata.ExprintserverSetConfigResponse>(chan);
+		ResponseWaiter<Exprintdata.ExprintserverSetConfigResponse> waiter = new ResponseWaiter<Exprintdata.ExprintserverSetConfigResponse>(chan.getBreakableChannel(),cont);
 		//Create and build the message that we send to the method, see the proto buffer documentation for more information
 		Exprintdata.Exprintconfig.Builder reqbld = Exprintdata.Exprintconfig
 				.newBuilder();

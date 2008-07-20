@@ -32,4 +32,10 @@ public class Pair<F,L>{
 		first=frst;
 		last=lst;
 	}
+	/**
+	 * {@inheritDoc}
+	 */
+	public String toString(){
+		return "<"+first.toString()+","+last.toString()+">";
+	}
 }

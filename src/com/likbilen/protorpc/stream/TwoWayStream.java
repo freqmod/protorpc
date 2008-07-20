@@ -21,17 +21,24 @@ import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
+import com.google.protobuf.ByteString;
+import com.google.protobuf.Descriptors;
+import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.Message;
 import com.google.protobuf.RpcCallback;
 import com.google.protobuf.RpcChannel;
 import com.google.protobuf.RpcController;
 import com.google.protobuf.Service;
+import com.google.protobuf.DescriptorProtos.FileDescriptorProto;
+import com.google.protobuf.Descriptors.DescriptorValidationException;
+import com.google.protobuf.Descriptors.FileDescriptor;
 import com.google.protobuf.Descriptors.MethodDescriptor;
+import com.likbilen.protorpc.MessageProto;
 import com.likbilen.protorpc.client.BreakableChannel;
 import com.likbilen.protorpc.client.ChannelBrokenListener;
 import com.likbilen.protorpc.client.SimpleRpcController;
-import com.likbilen.protorpc.proto.Constants;
 import com.likbilen.protorpc.stream.session.SessionManager;
+import com.likbilen.util.Pair;
 import com.likbilen.util.ThreadTools;
 import com.likbilen.util.Trio;
 import com.likbilen.util.stream.DataInputStream;
@@ -57,7 +64,7 @@ import com.likbilen.util.stream.DataOutputStream;
  *
  */
 
-public class TwoWayStream extends Object implements SessionManager,RpcChannel{
+public class TwoWayStream extends Object implements SessionManager,RpcChannel,SelfDescribingChannel{
 	/* protected OutputStream origStream; */
 	protected DataInputStream in;
 	protected DataOutputStream out;
@@ -72,14 +79,14 @@ public class TwoWayStream extends Object implements SessionManager,RpcChannel{
 	 * The highest protocol version this stream supports
 	 */
 	public final int maxSupportedProtocolVersion=1;
-	private final int preferedProtocolVesion=maxSupportedProtocolVersion;
 	private HashMap<Integer,Trio<RpcCallback<Message>,RpcController, Message>> currentCalls=new HashMap<Integer, Trio<RpcCallback<Message>,RpcController ,Message>>();
 	private Lock streamlock=new ReentrantLock();
 	private Condition initcond = streamlock.newCondition();
 	private RpcCallback<Boolean> shutdownCallback;
 	private HashSet<ChannelBrokenListener> channelBrokenListeners= new HashSet<ChannelBrokenListener>();
 	HiddenMethods hiddenmethods=new HiddenMethods(this);
-	
+	private RpcController descriptorRequestController=null;
+	private RpcCallback<Pair<String,FileDescriptor>> gotDescriptorCallback=null;
 	/*Constructors*/
 	
 	/**
@@ -172,35 +179,59 @@ public class TwoWayStream extends Object implements SessionManager,RpcChannel{
 			Message responsePrototype, RpcCallback<Message> done) {
 		streamlock.lock();
 		try {
-			if (protoversion == -1) {
-				protoversion=-2;
-				out.write(Constants.getCode(Constants.TYPE_INIT));
-				out.write(preferedProtocolVesion);
-				out.flush();
-				initcond.await();
-				if(protoversion==-2)
-					return;
-			}
-			out.write(Constants.getCode(Constants.TYPE_REQUEST));
-			out.writeUnsignedLittleEndianShort(callnum);
-			out.writeUnsignedLittleEndianShort(method.getIndex());
-			byte[] tmpb = request.toByteArray();
-			out.writeUnsignedLittleEndianShort(tmpb.length);
-			out.write(tmpb);
-			out.flush();
-			
+			MessageProto.Message.Builder reqbld = MessageProto.Message.newBuilder();
+			reqbld.setType(MessageProto.Type.REQEUST);
+			reqbld.setId(callnum);
+			reqbld.setName(method.getName());
+			reqbld.setBuffer(request.toByteString());
+			writeMessage(reqbld.build());
 			currentCalls.put(callnum, new Trio<RpcCallback<Message>,RpcController, Message>(
 					done, controller,responsePrototype));
 			callnum++;
 		} catch (IOException e) {
 			controller.setFailed(e.getMessage());
-		} catch (InterruptedException e) {
-			shutdown(false);
 		} finally {
 			streamlock.unlock();
 		}
 
 	}
+	@Override
+	public void requestServiceDescriptor(RpcCallback<Pair<String,FileDescriptor>> cb,RpcController ctrl){
+		if(descriptorRequestController!=null&&gotDescriptorCallback==null){
+			ctrl.setFailed("Can't make two descriptor requests at the same time");
+			return;
+		}
+		streamlock.lock();
+		try {
+			MessageProto.Message.Builder reqbld = MessageProto.Message.newBuilder();
+			reqbld.setType(MessageProto.Type.DESCRIPTOR_REQUEST);
+			writeMessage(reqbld.build());
+			descriptorRequestController=ctrl;
+			gotDescriptorCallback=cb;
+		} catch (IOException e) {
+			ctrl.setFailed(e.getMessage());
+		} finally {
+			streamlock.unlock();
+		}
+		
+	}
+	private void writeMessage(Message m) throws IOException{
+		out.writeUnsignedLittleEndianShort(m.getSerializedSize());
+		out.write(m.toByteArray());
+		out.flush();
+	}
+	private Message fillMessage(Message type,boolean timeout) throws IOException,TimeoutException{
+		int msglen=in.readUnsignedLittleEndianShort();
+		if(msglen==-1)
+			return null;
+		byte[] msgbuf=new byte[msglen];
+		if(timeout)
+			in.readFully(msgbuf,this.timeout);
+		else
+			in.readFully(msgbuf);
+		return type.newBuilderForType().mergeFrom(msgbuf).build();
+	}
+
 	/*----------------------Connection methods ---------------------*/
 	
 	/**
@@ -219,11 +250,15 @@ public class TwoWayStream extends Object implements SessionManager,RpcChannel{
 	 */
 	public void shutdown(boolean closeStreams){
 		if(connected){
+			streamlock.lock();
 			try{
-				out.write(Constants.getCode(Constants.TYPE_DISCONNECT));
-				out.flush();
+				MessageProto.Message.Builder reqbld = MessageProto.Message.newBuilder();
+				reqbld.setType(MessageProto.Type.DISCONNECT);
+				writeMessage(reqbld.build());
 			}catch(IOException e){
 				//don't handle
+			}finally{
+				streamlock.unlock();
 			}
 			try{
 				hiddenmethods.interrupt();
@@ -245,8 +280,25 @@ public class TwoWayStream extends Object implements SessionManager,RpcChannel{
 		}
 	}
 	
-
-
+	private MessageProto.DescriptorResponse generateDescriptorResponse(FileDescriptor parent,String serviceName){
+		MessageProto.DescriptorResponse.Builder rspbld= MessageProto.DescriptorResponse.newBuilder();
+		if(serviceName!=null){
+			rspbld.setServiceName(serviceName);
+		}
+		rspbld.setDesc(parent.toProto().toByteString());
+		for(FileDescriptor dep:parent.getDependencies()){
+			rspbld.addDeps(generateDescriptorResponse(dep,null));
+		}
+		
+		return rspbld.build();
+	}
+	private Descriptors.FileDescriptor parseDescriptorResponse(MessageProto.DescriptorResponse parent) throws InvalidProtocolBufferException, DescriptorValidationException{
+		Descriptors.FileDescriptor[] deps= new Descriptors.FileDescriptor[parent.getDepsCount()];
+		for(int i=0;i<parent.getDepsCount();i++){
+			deps[i]=parseDescriptorResponse(parent.getDeps(i));
+		}
+		return Descriptors.FileDescriptor.buildFrom(FileDescriptorProto.parseFrom(parent.getDesc()), deps);
+	}
 	class HiddenMethods extends Thread implements BreakableChannel{
 		private TwoWayStream encloser;
 		public HiddenMethods(TwoWayStream encloser){
@@ -276,114 +328,107 @@ public class TwoWayStream extends Object implements SessionManager,RpcChannel{
 			MethodDescriptor method=null;
 			Message request;
 			SimpleRpcController controller;
-			byte tmpb[]=new byte[0];
-			int code = 0, msgid, msglen,metid;
 			Trio<RpcCallback<Message>,RpcController, Message> msg;
+			MessageProto.Message inmsg=null;
 			try{
 				try {
 					while (connected) {
-						code=in.read();
-						if(Constants.fromCode(code) == Constants.TYPE_DISCONNECT ||code == -1){//disconnected by stream
+						try {
+							inmsg=(MessageProto.Message)fillMessage(MessageProto.Message.getDefaultInstance(),false);
+						} catch (TimeoutException e) {//will never happen
+						}
+						if(inmsg==null||inmsg.getType()==MessageProto.Type.DISCONNECT){//disconnected by stream
 							connected=false;
 							break;
 						}	
-						try {
-							if(protoversion==-2){
+						if (inmsg.getType()==MessageProto.Type.REQEUST&&service!=null) {
+							method=null;
+							if(service==null){//send not implemented
 								streamlock.lock();
 								try{
-									protoversion=in.read();
-									initcond.signalAll();
+									MessageProto.Message.Builder resp=MessageProto.Message.newBuilder();
+									resp.setType(MessageProto.Type.RESPONSE_NOT_IMPLEMENTED);
+									resp.setId(inmsg.getId());
+									writeMessage(resp.build());
 								}finally{
 									streamlock.unlock();
 								}
-							}
-							if(protoversion==-1){
-								if(Constants.fromCode(code) != Constants.TYPE_INIT){
-									break;//invalid code in this state
-								}
+							} else{
 								streamlock.lock();
 								try{
-									protoversion=in.read();
-									out.write(Constants.getCode(Constants.TYPE_INIT));
-									protoversion=Math.min(preferedProtocolVesion,protoversion);
-									out.write(protoversion);
-									out.flush();
-								}finally{
-									streamlock.unlock();
-								}
-							}
-							if (Constants.fromCode(code) == Constants.TYPE_REQUEST&&service!=null) {
-								streamlock.lock();
-								metid=-1;
-								try{
-									msgid = in.readUnsignedLittleEndianShort();
-									metid = in.readUnsignedLittleEndianShort();
-									if(metid<service.getDescriptorForType().getMethods().size()){
-										method=service.getDescriptorForType().getMethods().get(metid);
-										tmpb = new byte[in.readUnsignedLittleEndianShort()];
-										in.readFully(tmpb, timeout);
-									}else{
-										out.write(Constants.getCode(Constants.TYPE_RESPONSE_NOT_IMPLEMENTED));
-										out.writeUnsignedLittleEndianShort(metid);
+									if((method=service.getDescriptorForType().findMethodByName(inmsg.getName()))==null){
+										MessageProto.Message.Builder resp=MessageProto.Message.newBuilder();
+										resp.setType(MessageProto.Type.RESPONSE_NOT_IMPLEMENTED);
+										resp.setId(inmsg.getId());
+										writeMessage(resp.build());
 									}
 								}finally{
 									streamlock.unlock();
 								}
-								if(metid!=-1&&metid<service.getDescriptorForType().getMethods().size()){
-									request = service.getRequestPrototype(method)
-									.newBuilderForType().mergeFrom(tmpb).build();
+								if(method!=null){
+									request = service.getRequestPrototype(method).newBuilderForType().mergeFrom(inmsg.getBuffer()).build();
 									controller = new TwoWayRpcController(encloser);
 									controller.notifyOnCancel(new StreamServerCallback<Object>(
-													this, msgid));
+													this, inmsg.getId()));
 									service.callMethod(method, controller, request,
 												new StreamServerCallback<Message>(this,
-														msgid));
+														inmsg.getId()));
 								}
-							}else if (Constants.fromCode(code) == Constants.TYPE_RESPONSE) {
-								streamlock.lock();
-								try{
-									msgid = in.readUnsignedLittleEndianShort();
-									msglen = in.readUnsignedLittleEndianShort();
-									tmpb = new byte[msglen];
-									in.readFully(tmpb, timeout);
-									if (currentCalls.containsKey(new Integer(msgid))) {
-										msg = currentCalls.get(new Integer(msgid));
-										Message response = msg.last.newBuilderForType().mergeFrom(tmpb).build();
-										msg.first.run(response);
-										currentCalls.remove(new Integer(msgid));
-									}
-								}finally{
-									streamlock.unlock();
-								}
-							}else if (Constants.fromCode(code) == Constants.TYPE_RESPONSE_CANCEL) {
-								streamlock.lock();
-								try{
-									msgid = in.readUnsignedLittleEndianShort();
-									if (currentCalls.containsKey(new Integer(msgid))) {
-										msg = currentCalls.get(new Integer(msgid));//get controller
-										msg.middle.startCancel();
-										currentCalls.remove(new Integer(msgid));
-									}
-								}finally{
-									streamlock.unlock();
-								}
-							}else if (Constants.fromCode(code) == Constants.TYPE_RESPONSE_NOT_IMPLEMENTED) {
-								streamlock.lock();
-								try{
-									msgid = in.readUnsignedLittleEndianShort();
-									if (currentCalls.containsKey(new Integer(msgid))) {
-										msg = currentCalls.get(new Integer(msgid));//get controller
-										msg.middle.setFailed("Not implemented by peer");
-										currentCalls.remove(new Integer(msgid));
-									}
-								}finally{
-									streamlock.unlock();
-								}
-							}else{//empty buffer
-								in.skip(in.available());
 							}
-						} catch (TimeoutException e) {
-							e.printStackTrace();
+						}else if (inmsg.getType()==MessageProto.Type.DESCRIPTOR_REQUEST) {
+								streamlock.lock();
+								try{
+									MessageProto.Message.Builder rspbld = MessageProto.Message.newBuilder();
+									rspbld.setType(MessageProto.Type.DESCRIPTOR_RESPONSE);
+									if(service!=null){
+										rspbld.setBuffer(generateDescriptorResponse(service.getDescriptorForType().getFile(),service.getDescriptorForType().getName()).toByteString());
+									}else{
+										rspbld.setBuffer(ByteString.copyFrom(new byte[0]));
+									}
+									writeMessage(rspbld.build());
+								}finally{
+									streamlock.unlock();
+								}
+						}else if (inmsg.getType()==MessageProto.Type.RESPONSE) {
+								if (currentCalls.containsKey(new Integer(inmsg.getId()))) {
+									msg = currentCalls.get(new Integer(inmsg.getId()));
+									Message response = msg.last.newBuilderForType().mergeFrom(inmsg.getBuffer()).build();
+									msg.first.run(response);
+									currentCalls.remove(new Integer(inmsg.getId()));
+								}
+						}else if (inmsg.getType()==MessageProto.Type.RESPONSE_CANCEL) {
+								if (currentCalls.containsKey(new Integer(inmsg.getId()))) {
+									msg = currentCalls.get(new Integer(inmsg.getId()));//get controller
+									msg.middle.startCancel();
+									currentCalls.remove(new Integer(inmsg.getId()));
+								}
+						}else if (inmsg.getType()==MessageProto.Type.RESPONSE_NOT_IMPLEMENTED) {
+								if (currentCalls.containsKey(new Integer(inmsg.getId()))) {
+									msg = currentCalls.get(new Integer(inmsg.getId()));//get controller
+									msg.middle.setFailed("Not implemented by peer");
+									currentCalls.remove(new Integer(inmsg.getId()));
+								}
+						}else if (inmsg.getType()==MessageProto.Type.DESCRIPTOR_RESPONSE&&descriptorRequestController!=null&&gotDescriptorCallback!=null) {
+							try{
+								if(inmsg.getBuffer().isEmpty()){//signal not available
+									descriptorRequestController.startCancel();
+									gotDescriptorCallback.run(null);
+								}else{
+									try {
+										MessageProto.DescriptorResponse topresp= MessageProto.DescriptorResponse.parseFrom(inmsg.getBuffer());
+										Descriptors.FileDescriptor fldsc = parseDescriptorResponse(topresp);
+										gotDescriptorCallback.run(new Pair<String, FileDescriptor>(topresp.getServiceName(),fldsc));
+									} catch (DescriptorValidationException e) {//signal transport error
+										descriptorRequestController.setFailed("Parsing error while parsing service descriptor"+e);
+										gotDescriptorCallback.run(null);
+									}
+								}
+							}finally{//clean up
+								descriptorRequestController=null;
+								gotDescriptorCallback=null;
+							}
+						}else{//empty buffer
+							in.skip(in.available());
 						}
 					}
 				} catch (IOException e) {
@@ -413,16 +458,16 @@ public class TwoWayStream extends Object implements SessionManager,RpcChannel{
 			try {
 				if (param instanceof Message) {// response
 					Message parameter = (Message) param;
-					out.write(Constants.getCode(Constants.TYPE_RESPONSE));
-					out.writeUnsignedLittleEndianShort(id);
-					byte[] tmpb = parameter.toByteArray();
-					out.writeUnsignedLittleEndianShort(tmpb.length);
-					out.write(tmpb);
-					out.flush();
+					MessageProto.Message.Builder rspbld = MessageProto.Message.newBuilder();
+					rspbld.setType(MessageProto.Type.RESPONSE);
+					rspbld.setId(id);
+					rspbld.setBuffer(parameter.toByteString());
+					writeMessage(rspbld.build());
 				} else if (param == null) {// canceled
-					out.write(Constants.getCode(Constants.TYPE_RESPONSE_CANCEL));
-					out.writeUnsignedLittleEndianShort(id);
-					out.flush();
+					MessageProto.Message.Builder rspbld = MessageProto.Message.newBuilder();
+					rspbld.setType(MessageProto.Type.RESPONSE_CANCEL);
+					rspbld.setId(id);
+					writeMessage(rspbld.build());
 				}
 			} catch (IOException e) {
 	
@@ -507,5 +552,8 @@ public class TwoWayStream extends Object implements SessionManager,RpcChannel{
 	 */
 	public int getCurrentProtocolVersion() {
 		return protoversion;
+	}
+	public BreakableChannel getBreakableChannel(){
+		return hiddenmethods;
 	}
 }

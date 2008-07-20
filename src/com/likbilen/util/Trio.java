@@ -23,7 +23,7 @@ package com.likbilen.util;
 * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 /**
- * A container class to three two variables in one slot
+ * A container class to put three two variables in one slot
  */
 public class Trio<F,M,L> extends Pair<F,L>{
 	public M middle;
@@ -31,4 +31,11 @@ public class Trio<F,M,L> extends Pair<F,L>{
 		super(frst,lst);
 		middle=mdle;
 	}
+	/**
+	 * {@inheritDoc}
+	 */
+	public String toString(){
+		return "<"+first.toString()+","+middle.toString()+","+last.toString()+">";
+	}
+
 }

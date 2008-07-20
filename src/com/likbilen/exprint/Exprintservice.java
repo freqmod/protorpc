@@ -26,6 +26,7 @@ package com.likbilen.exprint;
 import com.google.protobuf.RpcCallback;
 import com.google.protobuf.RpcController;
 import com.likbilen.exprint.Exprintdata.Exprintconfig;
+import com.likbilen.exprint.Exprintdata.Void;
 import com.likbilen.protorpc.client.SimpleRpcController;
 import com.likbilen.protorpc.stream.session.TwoWayRpcChannelController;
 
@@ -85,5 +86,17 @@ public class Exprintservice extends Exprintdata.Exprintserver implements RpcCall
 	}
 	public String toString(){
 		return "Exprintservice@"+twoway+":"+id;
+	}
+	@Override
+	public void getConfig(RpcController controller, Void request,
+			RpcCallback<Exprintconfig> done) {
+		// TODO Auto-generated method stub
+		
+	}
+	@Override
+	public void resetConfig(RpcController controller, Void request,
+			RpcCallback<Void> done) {
+		// TODO Auto-generated method stub
+		
 	}
 }

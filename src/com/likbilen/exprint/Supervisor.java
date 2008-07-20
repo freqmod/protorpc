@@ -28,10 +28,14 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
+import java.util.concurrent.TimeoutException;
 
+import com.google.protobuf.Descriptors;
 import com.likbilen.protorpc.client.ResponseWaiter;
 import com.likbilen.protorpc.client.SimpleRpcController;
+import com.likbilen.protorpc.stream.SelfDescribingChannel;
 import com.likbilen.protorpc.stream.TwoWayStream;
+import com.likbilen.util.Pair;
 /**
  * The Supervsor is an example of a client and a server that communicates only with streams.
  * @author Frederik 
@@ -67,7 +71,7 @@ public class Supervisor {
 		 //Create a service that wraps the client channel
 		 Exprintdata.Exprintserver service = Exprintdata.Exprintserver.newStub(chan);
 		 //Create a responsewaiter that can block while waiting a response from the server
-		 ResponseWaiter<Exprintdata.ExprintserverSetConfigResponse> waiter = new ResponseWaiter<Exprintdata.ExprintserverSetConfigResponse>(chan);
+		 ResponseWaiter<Exprintdata.ExprintserverSetConfigResponse> waiter = new ResponseWaiter<Exprintdata.ExprintserverSetConfigResponse>(chan.getBreakableChannel(),cont);
 		 //Create and build the message that we send to the method, see the proto buffer documentation for more information
 		 Exprintdata.Exprintconfig.Builder reqbld=Exprintdata.Exprintconfig.newBuilder();
 		 reqbld.setPrinter("Morrohjørnet");
@@ -87,12 +91,41 @@ public class Supervisor {
 			//Clean up the waiter, free a pointer to the RpcChannel so it may be garbage collected.
 			//Remember to reset the waiter if you want to use it again.
 			waiter.cleanup();
-			//Print out the response code from the response
-			System.out.println(resp.getResponsecode());
+			if(resp==null){
+				if(cont.failed()){
+					System.out.println("Call failed:"+cont.errorText());
+				}else if(cont.isCanceled()){
+					System.out.println("Call canceled");
+				}else{
+					System.out.println("Channel broken");
+				}
+			}else{
+				//Print out the response code from the response
+				System.out.println(resp.getResponsecode());
+			}
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}
 		//Shut down the connection
+		if (chan instanceof SelfDescribingChannel) {
+			SelfDescribingChannel slfchan = (SelfDescribingChannel) chan;
+			cont.reset();
+			ResponseWaiter<Pair<String,Descriptors.FileDescriptor>> descwaiter = new ResponseWaiter<Pair<String,Descriptors.FileDescriptor>>(chan.getBreakableChannel(),cont);			
+			slfchan.requestServiceDescriptor(descwaiter.getCallback(),cont);
+			try {
+				Pair<String,Descriptors.FileDescriptor> dsc = descwaiter.await(500);
+				if(dsc==null){
+					System.out.println("Error"+cont.errorText());
+				}else{
+					System.out.println("Got filedescriptor:"+dsc+":"+dsc.last.findServiceByName(dsc.first));
+				}
+				
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			} catch (TimeoutException e) {
+				e.printStackTrace();
+			}
+		}
 		chan.shutdown(false);
 	}
 }

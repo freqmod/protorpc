@@ -14,16 +14,19 @@ public final class Exprintdata {
       com.google.protobuf.Descriptors.FileDescriptor
       buildDescriptor() {
     java.lang.String descriptorData =
-      "\n\023Exprintconfig.proto\022\007exprint\"\236\001\n\rExpri" +
-      "ntconfig\0220\n\010exprints\030\001 \003(\0132\036.exprint.Exp" +
-      "rintconfig.Exprint\022\017\n\007printer\030\002 \002(\t\032J\n\007E" +
-      "xprint\022\023\n\013subjectcode\030\001 \002(\t\022\020\n\010paralell\030" +
-      "\002 \001(\t\022\030\n\tsolutions\030\003 \001(\010:\005false\"6\n\036Expri" +
-      "ntserverSetConfigResponse\022\024\n\014responsecod" +
-      "e\030\001 \001(\t2^\n\rExprintserver\022M\n\nset_config\022\026" +
-      ".exprint.Exprintconfig\032\'.exprint.Exprint" +
-      "serverSetConfigResponseB#\n\024com.likbilen." +
-      "exprintB\013Exprintdata";
+      "\n(com/likbilen/exprint/Exprintconfig.pro" +
+      "to\022\007exprint\"\236\001\n\rExprintconfig\0220\n\010exprint" +
+      "s\030\001 \003(\0132\036.exprint.Exprintconfig.Exprint\022" +
+      "\017\n\007printer\030\002 \002(\t\032J\n\007Exprint\022\023\n\013subjectco" +
+      "de\030\001 \002(\t\022\020\n\010paralell\030\005 \001(\t\022\030\n\tsolutions\030" +
+      "\003 \001(\010:\005false\"6\n\036ExprintserverSetConfigRe" +
+      "sponse\022\024\n\014responsecode\030\001 \001(\t\"\006\n\004Void2\301\001\n" +
+      "\rExprintserver\0223\n\nget_config\022\r.exprint.V" +
+      "oid\032\026.exprint.Exprintconfig\022,\n\014reset_con" +
+      "fig\022\r.exprint.Void\032\r.exprint.Void\022M\n\nset" +
+      "_config\022\026.exprint.Exprintconfig\032\'.exprin" +
+      "t.ExprintserverSetConfigResponseB#\n\024com." +
+      "likbilen.exprintB\013Exprintdata";
     try {
       return com.google.protobuf.Descriptors.FileDescriptor
         .internalBuildGeneratedFileFrom(descriptorData,
@@ -32,7 +35,7 @@ public final class Exprintdata {
     } catch (Exception e) {
       throw new RuntimeException(
         "Failed to parse protocol buffer descriptor for " +
-        "\"Exprintconfig.proto\".", e);
+        "\"com/likbilen/exprint/Exprintconfig.proto\".", e);
     }
   }
   
@@ -90,7 +93,7 @@ public final class Exprintdata {
       public boolean hasSubjectcode() { return hasSubjectcode; }
       public java.lang.String getSubjectcode() { return subjectcode_; }
       
-      // optional string paralell = 2;
+      // optional string paralell = 5;
       private boolean hasParalell;
       private java.lang.String paralell_ = "";
       public boolean hasParalell() { return hasParalell; }
@@ -226,7 +229,7 @@ public final class Exprintdata {
           return this;
         }
         
-        // optional string paralell = 2;
+        // optional string paralell = 5;
         public boolean hasParalell() {
           return result.hasParalell();
         }
@@ -612,8 +615,148 @@ public final class Exprintdata {
     }
   }
   
+  public static final class Void extends
+      com.google.protobuf.GeneratedMessage {
+    // Use Void.newBuilder() to construct.
+    private Void() {}
+    
+    private static final Void defaultInstance = new Void();
+    public static Void getDefaultInstance() {
+      return defaultInstance;
+    }
+    
+    public Void getDefaultInstanceForType() {
+      return defaultInstance;
+    }
+    
+    public static final com.google.protobuf.Descriptors.Descriptor
+        getDescriptor() {
+      return com.likbilen.exprint.Exprintdata.internal_static_exprint_Void_descriptor;
+    }
+    
+    protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
+        internalGetFieldAccessorTable() {
+      return com.likbilen.exprint.Exprintdata.internal_static_exprint_Void_fieldAccessorTable;
+    }
+    
+    public static com.likbilen.exprint.Exprintdata.Void parseFrom(
+        com.google.protobuf.ByteString data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return newBuilder().mergeFrom(data).buildParsed();
+    }
+    public static com.likbilen.exprint.Exprintdata.Void parseFrom(
+        com.google.protobuf.ByteString data,
+        com.google.protobuf.ExtensionRegistry extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return newBuilder().mergeFrom(data, extensionRegistry)
+               .buildParsed();
+    }
+    public static com.likbilen.exprint.Exprintdata.Void parseFrom(byte[] data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return newBuilder().mergeFrom(data).buildParsed();
+    }
+    public static com.likbilen.exprint.Exprintdata.Void parseFrom(
+        byte[] data,
+        com.google.protobuf.ExtensionRegistry extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return newBuilder().mergeFrom(data, extensionRegistry)
+               .buildParsed();
+    }
+    public static com.likbilen.exprint.Exprintdata.Void parseFrom(java.io.InputStream input)
+        throws java.io.IOException {
+      return newBuilder().mergeFrom(input).buildParsed();
+    }
+    public static com.likbilen.exprint.Exprintdata.Void parseFrom(
+        java.io.InputStream input,
+        com.google.protobuf.ExtensionRegistry extensionRegistry)
+        throws java.io.IOException {
+      return newBuilder().mergeFrom(input, extensionRegistry)
+               .buildParsed();
+    }
+    public static com.likbilen.exprint.Exprintdata.Void parseFrom(
+        com.google.protobuf.CodedInputStream input)
+        throws java.io.IOException {
+      return newBuilder().mergeFrom(input).buildParsed();
+    }
+    public static com.likbilen.exprint.Exprintdata.Void parseFrom(
+        com.google.protobuf.CodedInputStream input,
+        com.google.protobuf.ExtensionRegistry extensionRegistry)
+        throws java.io.IOException {
+      return newBuilder().mergeFrom(input, extensionRegistry)
+               .buildParsed();
+    }
+    
+    public static Builder newBuilder() { return new Builder(); }
+    public Builder newBuilderForType() { return new Builder(); }
+    public static Builder newBuilder(com.likbilen.exprint.Exprintdata.Void prototype) {
+      return new Builder().mergeFrom(prototype);
+    }
+    
+    public static final class Builder extends
+        com.google.protobuf.GeneratedMessage.Builder<Builder> {
+      // Construct using com.likbilen.exprint.Exprintdata.Void.newBuilder()
+      private Builder() {}
+      
+      com.likbilen.exprint.Exprintdata.Void result = new com.likbilen.exprint.Exprintdata.Void();
+      
+      protected com.likbilen.exprint.Exprintdata.Void internalGetResult() {
+        return result;
+      }
+      
+      public Builder clear() {
+        result = new com.likbilen.exprint.Exprintdata.Void();
+        return this;
+      }
+      
+      public Builder clone() {
+        return new Builder().mergeFrom(result);
+      }
+      
+      public com.google.protobuf.Descriptors.Descriptor
+          getDescriptorForType() {
+        return com.likbilen.exprint.Exprintdata.Void.getDescriptor();
+      }
+      
+      public com.likbilen.exprint.Exprintdata.Void getDefaultInstanceForType() {
+        return com.likbilen.exprint.Exprintdata.Void.getDefaultInstance();
+      }
+      
+      public com.likbilen.exprint.Exprintdata.Void build() {
+        if (!isInitialized()) {
+          throw new com.google.protobuf.UninitializedMessageException(
+            result);
+        }
+        return buildPartial();
+      }
+      
+      private com.likbilen.exprint.Exprintdata.Void buildParsed()
+          throws com.google.protobuf.InvalidProtocolBufferException {
+        if (!isInitialized()) {
+          throw new com.google.protobuf.UninitializedMessageException(
+            result).asInvalidProtocolBufferException();
+        }
+        return buildPartial();
+      }
+      
+      public com.likbilen.exprint.Exprintdata.Void buildPartial() {
+        com.likbilen.exprint.Exprintdata.Void returnMe = result;
+        result = null;
+        return returnMe;
+      }
+      
+    }
+  }
+  
   public static abstract class Exprintserver
       implements com.google.protobuf.Service {
+    public abstract void getConfig(
+        com.google.protobuf.RpcController controller,
+        com.likbilen.exprint.Exprintdata.Void request,
+        com.google.protobuf.RpcCallback<com.likbilen.exprint.Exprintdata.Exprintconfig> done);
+    public abstract void resetConfig(
+        com.google.protobuf.RpcController controller,
+        com.likbilen.exprint.Exprintdata.Void request,
+        com.google.protobuf.RpcCallback<com.likbilen.exprint.Exprintdata.Void> done);
     public abstract void setConfig(
         com.google.protobuf.RpcController controller,
         com.likbilen.exprint.Exprintdata.Exprintconfig request,
@@ -642,6 +785,16 @@ public final class Exprintdata {
       }
       switch(method.getIndex()) {
         case 0:
+          this.getConfig(controller, (com.likbilen.exprint.Exprintdata.Void)request,
+            com.google.protobuf.RpcUtil.<com.likbilen.exprint.Exprintdata.Exprintconfig>specializeCallback(
+              done));
+          return;
+        case 1:
+          this.resetConfig(controller, (com.likbilen.exprint.Exprintdata.Void)request,
+            com.google.protobuf.RpcUtil.<com.likbilen.exprint.Exprintdata.Void>specializeCallback(
+              done));
+          return;
+        case 2:
           this.setConfig(controller, (com.likbilen.exprint.Exprintdata.Exprintconfig)request,
             com.google.protobuf.RpcUtil.<com.likbilen.exprint.Exprintdata.ExprintserverSetConfigResponse>specializeCallback(
               done));
@@ -661,6 +814,10 @@ public final class Exprintdata {
       }
       switch(method.getIndex()) {
         case 0:
+          return com.likbilen.exprint.Exprintdata.Void.getDefaultInstance();
+        case 1:
+          return com.likbilen.exprint.Exprintdata.Void.getDefaultInstance();
+        case 2:
           return com.likbilen.exprint.Exprintdata.Exprintconfig.getDefaultInstance();
         default:
           throw new java.lang.RuntimeException("Can't get here.");
@@ -677,6 +834,10 @@ public final class Exprintdata {
       }
       switch(method.getIndex()) {
         case 0:
+          return com.likbilen.exprint.Exprintdata.Exprintconfig.getDefaultInstance();
+        case 1:
+          return com.likbilen.exprint.Exprintdata.Void.getDefaultInstance();
+        case 2:
           return com.likbilen.exprint.Exprintdata.ExprintserverSetConfigResponse.getDefaultInstance();
         default:
           throw new java.lang.RuntimeException("Can't get here.");
@@ -699,12 +860,42 @@ public final class Exprintdata {
         return channel;
       }
       
+      public void getConfig(
+          com.google.protobuf.RpcController controller,
+          com.likbilen.exprint.Exprintdata.Void request,
+          com.google.protobuf.RpcCallback<com.likbilen.exprint.Exprintdata.Exprintconfig> done) {
+        channel.callMethod(
+          getDescriptor().getMethods().get(0),
+          controller,
+          request,
+          com.likbilen.exprint.Exprintdata.Exprintconfig.getDefaultInstance(),
+          com.google.protobuf.RpcUtil.generalizeCallback(
+            done,
+            com.likbilen.exprint.Exprintdata.Exprintconfig.class,
+            com.likbilen.exprint.Exprintdata.Exprintconfig.getDefaultInstance()));
+      }
+      
+      public void resetConfig(
+          com.google.protobuf.RpcController controller,
+          com.likbilen.exprint.Exprintdata.Void request,
+          com.google.protobuf.RpcCallback<com.likbilen.exprint.Exprintdata.Void> done) {
+        channel.callMethod(
+          getDescriptor().getMethods().get(1),
+          controller,
+          request,
+          com.likbilen.exprint.Exprintdata.Void.getDefaultInstance(),
+          com.google.protobuf.RpcUtil.generalizeCallback(
+            done,
+            com.likbilen.exprint.Exprintdata.Void.class,
+            com.likbilen.exprint.Exprintdata.Void.getDefaultInstance()));
+      }
+      
       public void setConfig(
           com.google.protobuf.RpcController controller,
           com.likbilen.exprint.Exprintdata.Exprintconfig request,
           com.google.protobuf.RpcCallback<com.likbilen.exprint.Exprintdata.ExprintserverSetConfigResponse> done) {
         channel.callMethod(
-          getDescriptor().getMethods().get(0),
+          getDescriptor().getMethods().get(2),
           controller,
           request,
           com.likbilen.exprint.Exprintdata.ExprintserverSetConfigResponse.getDefaultInstance(),
@@ -749,4 +940,15 @@ public final class Exprintdata {
           new java.lang.String[] { "Responsecode", },
           com.likbilen.exprint.Exprintdata.ExprintserverSetConfigResponse.class,
           com.likbilen.exprint.Exprintdata.ExprintserverSetConfigResponse.Builder.class);
+  private static final com.google.protobuf.Descriptors.Descriptor
+    internal_static_exprint_Void_descriptor =
+      getDescriptor().getMessageTypes().get(2);
+  private static
+    com.google.protobuf.GeneratedMessage.FieldAccessorTable
+      internal_static_exprint_Void_fieldAccessorTable = new
+        com.google.protobuf.GeneratedMessage.FieldAccessorTable(
+          internal_static_exprint_Void_descriptor,
+          new java.lang.String[] { },
+          com.likbilen.exprint.Exprintdata.Void.class,
+          com.likbilen.exprint.Exprintdata.Void.Builder.class);
 }
