@@ -180,7 +180,7 @@ public class TwoWayStream extends Object implements SessionManager,RpcChannel,Se
 		streamlock.lock();
 		try {
 			MessageProto.Message.Builder reqbld = MessageProto.Message.newBuilder();
-			reqbld.setType(MessageProto.Type.REQEUST);
+			reqbld.setType(MessageProto.Type.REQUEST);
 			reqbld.setId(callnum);
 			reqbld.setName(method.getName());
 			reqbld.setBuffer(request.toByteString());
@@ -341,7 +341,7 @@ public class TwoWayStream extends Object implements SessionManager,RpcChannel,Se
 							connected=false;
 							break;
 						}	
-						if (inmsg.getType()==MessageProto.Type.REQEUST&&service!=null) {
+						if (inmsg.getType()==MessageProto.Type.REQUEST&&service!=null) {
 							method=null;
 							if(service==null){//send not implemented
 								streamlock.lock();
@@ -369,10 +369,10 @@ public class TwoWayStream extends Object implements SessionManager,RpcChannel,Se
 									request = service.getRequestPrototype(method).newBuilderForType().mergeFrom(inmsg.getBuffer()).build();
 									controller = new TwoWayRpcController(encloser);
 									controller.notifyOnCancel(new StreamServerCallback<Object>(
-													this, inmsg.getId()));
+													this, inmsg.getId(),controller));
 									service.callMethod(method, controller, request,
 												new StreamServerCallback<Message>(this,
-														inmsg.getId()));
+														inmsg.getId(),controller));
 								}
 							}
 						}else if (inmsg.getType()==MessageProto.Type.DESCRIPTOR_REQUEST) {
@@ -402,6 +402,12 @@ public class TwoWayStream extends Object implements SessionManager,RpcChannel,Se
 									msg.middle.startCancel();
 									currentCalls.remove(new Integer(inmsg.getId()));
 								}
+						}else if (inmsg.getType()==MessageProto.Type.RESPONSE_FAILED) {
+							if (currentCalls.containsKey(new Integer(inmsg.getId()))) {
+								msg = currentCalls.get(new Integer(inmsg.getId()));//get controller
+								msg.middle.setFailed(inmsg.getBuffer().toStringUtf8());
+								currentCalls.remove(new Integer(inmsg.getId()));
+							}
 						}else if (inmsg.getType()==MessageProto.Type.RESPONSE_NOT_IMPLEMENTED) {
 								if (currentCalls.containsKey(new Integer(inmsg.getId()))) {
 									msg = currentCalls.get(new Integer(inmsg.getId()));//get controller
@@ -451,7 +457,7 @@ public class TwoWayStream extends Object implements SessionManager,RpcChannel,Se
 		/**
 		 * Private: Called to signal that a response is recieved, may dissappear at any moment
 		 */
-		public void run(Integer id, Object param) {
+		public void run(Integer id, Object param,RpcController ctrl) {
 			if(service==null)
 				return;
 			streamlock.lock();
@@ -464,10 +470,18 @@ public class TwoWayStream extends Object implements SessionManager,RpcChannel,Se
 					rspbld.setBuffer(parameter.toByteString());
 					writeMessage(rspbld.build());
 				} else if (param == null) {// canceled
-					MessageProto.Message.Builder rspbld = MessageProto.Message.newBuilder();
-					rspbld.setType(MessageProto.Type.RESPONSE_CANCEL);
-					rspbld.setId(id);
-					writeMessage(rspbld.build());
+					if(ctrl.failed()){
+						MessageProto.Message.Builder rspbld = MessageProto.Message.newBuilder();
+						rspbld.setType(MessageProto.Type.RESPONSE_CANCEL);
+						rspbld.setId(id);
+						writeMessage(rspbld.build());
+					}else{
+						MessageProto.Message.Builder rspbld = MessageProto.Message.newBuilder();
+						rspbld.setType(MessageProto.Type.RESPONSE_FAILED);
+						rspbld.setId(id);
+						rspbld.setBuffer(ByteString.copyFromUtf8(ctrl.errorText()));
+						writeMessage(rspbld.build());
+					}
 				}
 			} catch (IOException e) {
 	

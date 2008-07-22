@@ -19,11 +19,12 @@ public final class MessageProto {
       "\n\004name\030\003 \001(\t\022\016\n\006buffer\030\004 \001(\014\"c\n\022Descript" +
       "orResponse\022\014\n\004desc\030\001 \002(\014\022*\n\004deps\030\002 \003(\0132\034" +
       ".protorpc.DescriptorResponse\022\023\n\013serviceN" +
-      "ame\030\003 \001(\t*\225\001\n\004Type\022\013\n\007REQEUST\020\001\022\014\n\010RESPO" +
-      "NSE\020\002\022\023\n\017RESPONSE_CANCEL\020\003\022\034\n\030RESPONSE_N" +
-      "OT_IMPLEMENTED\020\004\022\016\n\nDISCONNECT\020\005\022\026\n\022DESC" +
-      "RIPTOR_REQUEST\020\006\022\027\n\023DESCRIPTOR_RESPONSE\020" +
-      "\007B%\n\025com.likbilen.protorpcB\014MessageProto";
+      "ame\030\003 \001(\t*\252\001\n\004Type\022\013\n\007REQUEST\020\001\022\014\n\010RESPO" +
+      "NSE\020\002\022\023\n\017RESPONSE_CANCEL\020\003\022\023\n\017RESPONSE_F" +
+      "AILED\020\004\022\034\n\030RESPONSE_NOT_IMPLEMENTED\020\005\022\016\n" +
+      "\nDISCONNECT\020\006\022\026\n\022DESCRIPTOR_REQUEST\020\007\022\027\n" +
+      "\023DESCRIPTOR_RESPONSE\020\010B%\n\025com.likbilen.p" +
+      "rotorpcB\014MessageProto";
     try {
       return com.google.protobuf.Descriptors.FileDescriptor
         .internalBuildGeneratedFileFrom(descriptorData,
@@ -37,13 +38,14 @@ public final class MessageProto {
   }
   
   public static enum Type {
-    REQEUST(0, 1),
+    REQUEST(0, 1),
     RESPONSE(1, 2),
     RESPONSE_CANCEL(2, 3),
-    RESPONSE_NOT_IMPLEMENTED(3, 4),
-    DISCONNECT(4, 5),
-    DESCRIPTOR_REQUEST(5, 6),
-    DESCRIPTOR_RESPONSE(6, 7),
+    RESPONSE_FAILED(3, 4),
+    RESPONSE_NOT_IMPLEMENTED(4, 5),
+    DISCONNECT(5, 6),
+    DESCRIPTOR_REQUEST(6, 7),
+    DESCRIPTOR_RESPONSE(7, 8),
     ;
     
     
@@ -51,13 +53,14 @@ public final class MessageProto {
     
     public static Type valueOf(int value) {
       switch (value) {
-        case 1: return REQEUST;
+        case 1: return REQUEST;
         case 2: return RESPONSE;
         case 3: return RESPONSE_CANCEL;
-        case 4: return RESPONSE_NOT_IMPLEMENTED;
-        case 5: return DISCONNECT;
-        case 6: return DESCRIPTOR_REQUEST;
-        case 7: return DESCRIPTOR_RESPONSE;
+        case 4: return RESPONSE_FAILED;
+        case 5: return RESPONSE_NOT_IMPLEMENTED;
+        case 6: return DISCONNECT;
+        case 7: return DESCRIPTOR_REQUEST;
+        case 8: return DESCRIPTOR_RESPONSE;
         default: return null;
       }
     }
@@ -76,7 +79,7 @@ public final class MessageProto {
     }
     
     private static final Type[] VALUES = {
-      REQEUST, RESPONSE, RESPONSE_CANCEL, RESPONSE_NOT_IMPLEMENTED, DISCONNECT, DESCRIPTOR_REQUEST, DESCRIPTOR_RESPONSE, 
+      REQUEST, RESPONSE, RESPONSE_CANCEL, RESPONSE_FAILED, RESPONSE_NOT_IMPLEMENTED, DISCONNECT, DESCRIPTOR_REQUEST, DESCRIPTOR_RESPONSE, 
     };
     public static Type valueOf(
         com.google.protobuf.Descriptors.EnumValueDescriptor desc) {
@@ -120,7 +123,7 @@ public final class MessageProto {
     
     // optional .protorpc.Type type = 1;
     private boolean hasType;
-    private com.likbilen.protorpc.MessageProto.Type type_ = com.likbilen.protorpc.MessageProto.Type.REQEUST;
+    private com.likbilen.protorpc.MessageProto.Type type_ = com.likbilen.protorpc.MessageProto.Type.REQUEST;
     public boolean hasType() { return hasType; }
     public com.likbilen.protorpc.MessageProto.Type getType() { return type_; }
     
@@ -262,7 +265,7 @@ public final class MessageProto {
       }
       public Builder clearType() {
         result.hasType = false;
-        result.type_ = com.likbilen.protorpc.MessageProto.Type.REQEUST;
+        result.type_ = com.likbilen.protorpc.MessageProto.Type.REQUEST;
         return this;
       }
       

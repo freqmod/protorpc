@@ -27,13 +27,14 @@ option java_package = "com.likbilen.protorpc";
 option java_outer_classname = "MessageProto";
 
 enum Type {
-  REQEUST					= 1;
+  REQUEST					= 1;
   RESPONSE					= 2;
   RESPONSE_CANCEL			= 3;
-  RESPONSE_NOT_IMPLEMENTED	= 4;
-  DISCONNECT				= 5;
-  DESCRIPTOR_REQUEST		= 6;
-  DESCRIPTOR_RESPONSE		= 7;
+  RESPONSE_FAILED			= 4;
+  RESPONSE_NOT_IMPLEMENTED	= 5;
+  DISCONNECT				= 6;
+  DESCRIPTOR_REQUEST		= 7;
+  DESCRIPTOR_RESPONSE		= 8;
 };
 message Message {
   optional Type type=1;

@@ -56,6 +56,7 @@ public class SimpleRpcController implements RpcController,CallbackRpcController 
 		reason=null;
 		hasFailed=false;
 		canceled=false;
+		controllerInfoListeners.clear();
 
 	}
 

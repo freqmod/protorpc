@@ -10,16 +10,19 @@ package com.likbilen.protorpc.stream;
 */
 
 import com.google.protobuf.RpcCallback;
+import com.google.protobuf.RpcController;
 
 class StreamServerCallback<E> implements RpcCallback<E>{
 	private Integer id;
 	private TwoWayStream.HiddenMethods srv;
-	public StreamServerCallback(TwoWayStream.HiddenMethods srv,Integer id){
+	private RpcController ctrl;
+	public StreamServerCallback(TwoWayStream.HiddenMethods srv,Integer id,RpcController ctrl){
 		this.id=id;
 		this.srv=srv;
+		this.ctrl=ctrl;
 	}
 	@Override
 	public void run(E parameter) {
-		srv.run(id,(Object)parameter);
+		srv.run(id,(Object)parameter,ctrl);
 	}
 }
