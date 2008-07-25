@@ -42,6 +42,22 @@ public class DataOutputStream extends java.io.DataOutputStream{
 		tmp[3] = (byte) (v >> 24);
 		write(tmp, 0, 4);
 	}
+	public void writeUnsignedLittleEndianInt(long v) throws IOException {
+		byte[] tmp = new byte[4];
+		tmp[0] = (byte) v;
+		tmp[1] = (byte) (v >> 8);
+		tmp[2] = (byte) (v >> 16);
+		tmp[3] = (byte) (v >> 24);
+		write(tmp, 0, 4);
+	}
+	public void writeUnsignedBigEndianInt(long v) throws IOException {
+		byte[] tmp = new byte[4];
+		tmp[3] = (byte) v;
+		tmp[2] = (byte) (v >> 8);
+		tmp[1] = (byte) (v >> 16);
+		tmp[0] = (byte) (v >> 24);
+		write(tmp, 0, 4);
+	}
 
 	public void writeSignedLittleEndianShort(short v) throws IOException {
 		writeUnsignedLittleEndianShort(v);
@@ -53,4 +69,5 @@ public class DataOutputStream extends java.io.DataOutputStream{
 		tmp[1] = (byte) (v >> 8);
 		write(tmp, 0, 2);
 	}
+
 }

@@ -216,12 +216,12 @@ public class TwoWayStream extends Object implements SessionManager,RpcChannel,Se
 		
 	}
 	private void writeMessage(Message m) throws IOException{
-		out.writeUnsignedLittleEndianShort(m.getSerializedSize());
+		out.writeUnsignedBigEndianInt(m.getSerializedSize());
 		out.write(m.toByteArray());
 		out.flush();
 	}
 	private Message fillMessage(Message type,boolean timeout) throws IOException,TimeoutException{
-		int msglen=in.readUnsignedLittleEndianShort();
+		int msglen=(int)in.readUnsignedBigEndianInt();
 		if(msglen==-1)
 			return null;
 		byte[] msgbuf=new byte[msglen];

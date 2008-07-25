@@ -42,6 +42,17 @@ public class DataInputStream extends java.io.DataInputStream {
 				| (tmp[0] & 0xff);
 	}
 
+	public long readUnsignedLittleEndianInt() throws IOException {
+		byte[] tmp = new byte[4];
+		readFully(tmp, 0, 4);
+		return ((tmp[3] & 0xff) << 24 |(tmp[2] & 0xff) << 16 |(tmp[1] & 0xff) << 8 | (tmp[0] & 0xff));
+	}
+	public long readUnsignedBigEndianInt() throws IOException {
+		byte[] tmp = new byte[4];
+		readFully(tmp, 0, 4);
+		return ((tmp[0] & 0xff) << 24 |(tmp[1] & 0xff) << 16 |(tmp[2] & 0xff) << 8 | (tmp[3] & 0xff));
+	}
+
 	public int readUnsignedLittleEndianShort() throws IOException {
 		byte[] tmp = new byte[2];
 		readFully(tmp, 0, 2);
