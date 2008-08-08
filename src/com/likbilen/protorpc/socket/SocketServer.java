@@ -34,9 +34,9 @@ import com.likbilen.protorpc.stream.TwoWayStream;
  *
  */
 public class SocketServer{
-	private ServerSocket ssc;
+	protected ServerSocket ssc;
 	private boolean running;
-	private Service service;
+	protected Service service;
 	private HashSet<TwoWayStream> streamServers=new HashSet<TwoWayStream>();
 	private boolean shutDownOnDisconnect=false;
 	private SocketServerPrivate priv=new SocketServerPrivate();
@@ -45,6 +45,9 @@ public class SocketServer{
 	 * @param server
 	 * @throws IOException
 	 */
+	protected SocketServer(){
+	}
+
 	public SocketServer(Service server) throws IOException{
 		this.service=server;
 		ssc=new ServerSocket();

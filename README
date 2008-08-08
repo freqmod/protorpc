@@ -1,3 +1,5 @@
 This is an implementation of RpcChannel and a server that it can communicate
 with for google protocol buffers. For more information se http://protorpc.likbilen.com
+The SSL-classes are not tested.
+Examples is in src/com/likbilen/exprint/*
 

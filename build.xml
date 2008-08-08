@@ -1,0 +1,65 @@
+<project name="Protorpc" default="compile" basedir=".">
+  <property file="build.properties"/>
+<target name="protocompile">
+<exec executable="protoc"> 
+   <arg value="--java_out=src" /> 
+   <arg value="--proto_path=src" /> 
+   <arg value="src/com/likbilen/protorpc/Message.proto" /> 
+ </exec> 
+</target>
+<target name="compile" depends="protocompile">
+<javac srcdir="src"
+         destdir="build"
+         classpath="lib/protobuf-java-2.0.0beta.jar"
+         debug="on"
+         source="1.6">
+ <include name="**/*.java"/>
+ <exclude name="com/likbilen/exprint/*.java"/>
+</javac>
+</target>
+<target name="compile-examples" depends="build">
+  <exec executable="protoc"> 
+    <arg value="--java_out=src" /> 
+    <arg value="--proto_path=src" /> 
+    <arg value="src/com/likbilen/exprint/Exprintconfig.proto" /> 
+  </exec> 
+<javac srcdir="src/com/likbilen/exprint"
+         destdir="build-examples"
+         classpath="lib/protobuf-java-2.0.0beta.jar:dist/protorpc.jar"
+         debug="on"
+         source="1.6">
+ <include name="**/*.java"/>
+</javac>
+</target>
+<target name="build" depends="compile,javadoc">
+  <jar destfile="dist/protorpc.jar"
+       basedir="build/"
+  />
+  <jar destfile="dist/protorpc-javadoc.jar"
+       basedir="docs/"
+  />
+</target>
+<target name="clean">
+  <delete dir="build/com"/>
+  <delete file="dist/protorpc.jar"/>
+  <delete file="src/com/likbilen/protorpc/MessageProto.java"/>
+  <delete dir="docs"/>
+</target>
+<target name="javadoc" depends="protocompile">
+  <javadoc defaultexcludes="yes"
+	   classpath="lib/protobuf-java-2.0.0beta.jar"
+           destdir="docs"
+           author="true"
+           version="true"
+           use="true"
+           windowtitle="Protorpc api">
+    <link href="http://java.sun.com/javase/6/docs/api/"/>
+    <link href="http://code.google.com/apis/protocolbuffers/docs/reference/java/"/>
+    <fileset dir="src" defaultexcludes="yes">
+      <include name="**/*.java"/>
+      <exclude name="com/likbilen/exprint/*.java"/>
+    </fileset>
+  </javadoc>
+</target>
+
+</project>

@@ -14,17 +14,18 @@ public final class MessageProto {
       com.google.protobuf.Descriptors.FileDescriptor
       buildDescriptor() {
     java.lang.String descriptorData =
-      "\n\rMessage.proto\022\010protorpc\"Q\n\007Message\022\034\n\004" +
-      "type\030\001 \001(\0162\016.protorpc.Type\022\n\n\002id\030\002 \001(\r\022\014" +
-      "\n\004name\030\003 \001(\t\022\016\n\006buffer\030\004 \001(\014\"c\n\022Descript" +
-      "orResponse\022\014\n\004desc\030\001 \002(\014\022*\n\004deps\030\002 \003(\0132\034" +
-      ".protorpc.DescriptorResponse\022\023\n\013serviceN" +
-      "ame\030\003 \001(\t*\252\001\n\004Type\022\013\n\007REQUEST\020\001\022\014\n\010RESPO" +
-      "NSE\020\002\022\023\n\017RESPONSE_CANCEL\020\003\022\023\n\017RESPONSE_F" +
-      "AILED\020\004\022\034\n\030RESPONSE_NOT_IMPLEMENTED\020\005\022\016\n" +
-      "\nDISCONNECT\020\006\022\026\n\022DESCRIPTOR_REQUEST\020\007\022\027\n" +
-      "\023DESCRIPTOR_RESPONSE\020\010B%\n\025com.likbilen.p" +
-      "rotorpcB\014MessageProto";
+      "\n#com/likbilen/protorpc/Message.proto\022\010p" +
+      "rotorpc\"Q\n\007Message\022\034\n\004type\030\001 \001(\0162\016.proto" +
+      "rpc.Type\022\n\n\002id\030\002 \001(\r\022\014\n\004name\030\003 \001(\t\022\016\n\006bu" +
+      "ffer\030\004 \001(\014\"c\n\022DescriptorResponse\022\014\n\004desc" +
+      "\030\001 \002(\014\022*\n\004deps\030\002 \003(\0132\034.protorpc.Descript" +
+      "orResponse\022\023\n\013serviceName\030\003 \001(\t*\252\001\n\004Type" +
+      "\022\013\n\007REQUEST\020\001\022\014\n\010RESPONSE\020\002\022\023\n\017RESPONSE_" +
+      "CANCEL\020\003\022\023\n\017RESPONSE_FAILED\020\004\022\034\n\030RESPONS" +
+      "E_NOT_IMPLEMENTED\020\005\022\016\n\nDISCONNECT\020\006\022\026\n\022D" +
+      "ESCRIPTOR_REQUEST\020\007\022\027\n\023DESCRIPTOR_RESPON" +
+      "SE\020\010B%\n\025com.likbilen.protorpcB\014MessagePr" +
+      "oto";
     try {
       return com.google.protobuf.Descriptors.FileDescriptor
         .internalBuildGeneratedFileFrom(descriptorData,
@@ -33,7 +34,7 @@ public final class MessageProto {
     } catch (Exception e) {
       throw new RuntimeException(
         "Failed to parse protocol buffer descriptor for " +
-        "\"Message.proto\".", e);
+        "\"com/likbilen/protorpc/Message.proto\".", e);
     }
   }
   
